@@ -20,6 +20,9 @@ async function initPage() {
     // Настраиваем плавный скролл для якорных ссылок
     setupSmoothScroll();
     
+    // Инициализируем модуль курсов
+    await initCourses();
+    
     console.log('Страница готова к работе');
 }
 

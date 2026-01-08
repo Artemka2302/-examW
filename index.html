@@ -400,6 +400,106 @@
             </div>
         </div>
     </section>
+        <!-- БЛОК ПРЕДЛАГАЕМЫХ КУРСОВ -->
+    <section id="courses" class="py-5 my-5">
+        <div class="container">
+            <!-- Заголовок и описание -->
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">
+                    <i class="bi bi-book text-primary me-2"></i>
+                    Наши курсы
+                </h2>
+                <p class="lead text-muted mb-4">
+                    Выберите подходящий курс для достижения ваших целей
+                </p>
+            </div>
+            
+            <!-- Форма поиска курсов -->
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="card-title mb-4">
+                                <i class="bi bi-search me-2"></i>Найти курс
+                            </h5>
+                            <form id="courseSearchForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="searchName" class="form-label">Название курса</label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="searchName" 
+                                               placeholder="Например: английский, французский...">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="searchLevel" class="form-label">Уровень</label>
+                                        <select class="form-select" id="searchLevel">
+                                            <option value="">Все уровни</option>
+                                            <option value="Beginner">Начальный</option>
+                                            <option value="Intermediate">Средний</option>
+                                            <option value="Advanced">Продвинутый</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary" 
+                                                    id="resetSearch">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Сбросить
+                                            </button>
+                                            <button type="submit" 
+                                                    class="btn btn-primary px-4">
+                                                <i class="bi bi-search me-1"></i>Найти
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Состояние загрузки -->
+            <div id="coursesLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-3 text-muted">Загружаем список курсов...</p>
+            </div>
+            
+            <!-- Контейнер для курсов -->
+            <div id="coursesContainer" class="row g-4 mb-5" style="display: none;">
+                <!-- Курсы будут добавляться сюда динамически -->
+            </div>
+            
+            <!-- Состояние "нет курсов" -->
+            <div id="noCourses" class="text-center py-5" style="display: none;">
+                <i class="bi bi-book text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">Курсы не найдены</h4>
+                <p class="text-muted">Попробуйте изменить параметры поиска</p>
+            </div>
+            
+            <!-- Пагинация -->
+            <nav id="coursesPagination" aria-label="Навигация по страницам курсов" style="display: none;">
+                <ul class="pagination justify-content-center">
+                    <!-- Пагинация будет добавляться сюда динамически -->
+                </ul>
+            </nav>
+            
+            <!-- Кнопка для открытия формы заявки -->
+            <div class="text-center mt-5">
+                <button type="button" 
+                        class="btn btn-success btn-lg" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#orderModal"
+                        id="openOrderBtn"
+                        style="display: none;">
+                    <i class="bi bi-pencil-square me-2"></i>Подать заявку на курс
+                </button>
+            </div>
+        </div>
+    </section>
 </main>
     <!-- Весь контент страницы будет здесь -->
     
@@ -411,6 +511,7 @@
     <script src="Js/utils.js"></script>
     <script src="Js/config.js"></script>
     <script src="Js/api.js"></script>
+    <script src="js/courses.js"></script>
     <script src="Js/main.js"></script>
 
 </body>
