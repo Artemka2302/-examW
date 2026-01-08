@@ -183,3 +183,219 @@ html {
     scroll-behavior: smooth;
     scroll-padding-top: 80px; /* Учитываем высоту фиксированной шапки */
 }
+/* ========== БЛОК ОПИСАНИЯ ШКОЛЫ ========== */
+
+#about {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+    border-radius: 20px;
+    margin-top: 2rem;
+    margin-bottom: 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Декоративный элемент в углу */
+#about::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(45deg, var(--primary-color), transparent);
+    border-radius: 50%;
+    opacity: 0.1;
+    z-index: 0;
+}
+
+#about > .row {
+    position: relative;
+    z-index: 1;
+}
+
+/* Заголовок */
+.display-4 {
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--dark-color);
+    margin-bottom: 1.5rem;
+}
+
+.display-4 .text-primary {
+    position: relative;
+}
+
+.display-4 .text-primary::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+}
+
+/* Основной текст */
+.lead {
+    font-size: 1.25rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: #6c757d;
+}
+
+/* Списки преимуществ */
+.list-unstyled li {
+    padding-left: 0;
+    display: flex;
+    align-items: flex-start;
+}
+
+.list-unstyled .bi-check-circle-fill {
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+
+/* Карточка с изображением */
+.card {
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-img-top {
+    transition: transform 0.5s ease;
+}
+
+.card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+/* Бейдж с лицензией */
+.position-absolute.bg-primary {
+    background-color: var(--primary-color) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Статистика */
+.card-body .row {
+    padding: 1rem 0;
+}
+
+.card-body h3 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.card-body .text-muted {
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
+.border-end {
+    border-right: 1px solid #e9ecef !important;
+}
+
+/* Карточка в футере */
+.card-footer.bg-light {
+    background-color: #f8f9fa !important;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Кнопки */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #3a56c4;
+    border-color: #3a56c4;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(58, 86, 196, 0.2);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(58, 86, 196, 0.2);
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 992px) {
+    #about {
+        padding: 2rem 0 !important;
+        margin-top: 1rem;
+        border-radius: 15px;
+    }
+    
+    .display-4 {
+        font-size: 2.5rem;
+        text-align: center;
+    }
+    
+    .lead {
+        text-align: center;
+        font-size: 1.1rem;
+    }
+    
+    .btn-lg {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-primary, .btn-outline-primary {
+        margin-right: 0 !important;
+    }
+    
+    .card {
+        margin-top: 2rem;
+    }
+    
+    /* Убираем декоративный элемент на мобильных */
+    #about::before {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    #about {
+        margin-bottom: 2rem;
+    }
+    
+    .card-body h3 {
+        font-size: 1.5rem;
+    }
+    
+    .list-unstyled {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Анимация появления */
+#about {
+    animation: fadeIn 1s ease;
+}   
