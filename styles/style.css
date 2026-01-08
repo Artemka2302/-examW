@@ -394,6 +394,224 @@ html {
         margin-bottom: 1.5rem;
     }
 }
+/* ========== БЛОК ПРЕИМУЩЕСТВ ========== */
+
+#advantages {
+    background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Декоративные элементы */
+#advantages::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+        var(--primary-color), 
+        var(--success-color), 
+        var(--info-color),
+        var(--warning-color));
+    z-index: 1;
+}
+
+/* Заголовок секции */
+#advantages .display-5 {
+    font-weight: 700;
+    position: relative;
+    display: inline-block;
+    color: var(--dark-color);
+}
+
+#advantages .display-5::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 3px;
+}
+
+/* Сетка карточек (Bootstrap Grid System) */
+#advantages .row.g-4 {
+    --bs-gutter-y: 1.5rem;
+    --bs-gutter-x: 1.5rem;
+}
+
+/* Иконки преимуществ */
+.advantage-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border-radius: 50%;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.advantage-icon i {
+    font-size: 2.5rem;
+}
+
+/* Карточки преимуществ */
+.advantage-card {
+    transition: all 0.3s ease;
+    border-radius: 15px !important;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+.advantage-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: transparent;
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.advantage-card:hover::before {
+    background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+}
+
+.advantage-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+}
+
+.advantage-card:hover .advantage-icon {
+    transform: scale(1.1);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Цвета для разных типов карточек */
+.advantage-card:nth-child(1):hover .advantage-icon { background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
+.advantage-card:nth-child(2):hover .advantage-icon { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+.advantage-card:nth-child(3):hover .advantage-icon { background: linear-gradient(135deg, #e0f7fa, #b2ebf2); }
+.advantage-card:nth-child(4):hover .advantage-icon { background: linear-gradient(135deg, #fce4ec, #f8bbd9); }
+.advantage-card:nth-child(5):hover .advantage-icon { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+.advantage-card:nth-child(6):hover .advantage-icon { background: linear-gradient(135deg, #f3e5f5, #e1bee7); }
+.advantage-card:nth-child(7):hover .advantage-icon { background: linear-gradient(135deg, #e8eaf6, #c5cae9); }
+.advantage-card:nth-child(8):hover .advantage-icon { background: linear-gradient(135deg, #e0f2f1, #b2dfdb); }
+
+/* Статистика */
+.stat-number {
+    font-size: 3.5rem;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Призыв к действию */
+#advantages .bg-light {
+    background-color: #f8f9fa !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border-radius: 15px !important;
+}
+
+#advantages .btn-lg {
+    padding: 1rem 2.5rem;
+    font-weight: 600;
+    border-radius: 50px;
+    box-shadow: 0 6px 12px rgba(78, 115, 223, 0.25);
+    transition: all 0.3s ease;
+}
+
+#advantages .btn-lg:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(78, 115, 223, 0.35);
+}
+
+/* Кастомные цвета */
+.text-pink {
+    color: #e83e8c !important;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 992px) {
+    #advantages {
+        padding: 3rem 0 !important;
+    }
+    
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .advantage-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+    }
+    
+    #advantages .btn-lg {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    #advantages .display-5 {
+        font-size: 1.75rem;
+    }
+    
+    .advantage-icon {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .advantage-icon i {
+        font-size: 2rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+    
+    #advantages .bg-light {
+        padding: 2rem 1rem !important;
+    }
+}
+
+/* Анимация появления карточек */
+.advantage-card {
+    animation: fadeInUp 0.6s ease backwards;
+}
+
+.advantage-card:nth-child(1) { animation-delay: 0.1s; }
+.advantage-card:nth-child(2) { animation-delay: 0.2s; }
+.advantage-card:nth-child(3) { animation-delay: 0.3s; }
+.advantage-card:nth-child(4) { animation-delay: 0.4s; }
+.advantage-card:nth-child(5) { animation-delay: 0.5s; }
+.advantage-card:nth-child(6) { animation-delay: 0.6s; }
+.advantage-card:nth-child(7) { animation-delay: 0.7s; }
+.advantage-card:nth-child(8) { animation-delay: 0.8s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 /* Анимация появления */
 #about {
