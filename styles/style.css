@@ -856,7 +856,76 @@ html {
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+/* ========== СТИЛИ ПАГИНАЦИИ ========== */
 
+#coursesPagination {
+    margin: 2rem auto;
+    display: flex;
+    justify-content: center;
+}
+
+#coursesPagination .pagination {
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+#coursesPagination .page-item {
+    margin: 0 2px;
+}
+
+#coursesPagination .page-link {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    color: var(--primary-color);
+    font-weight: 500;
+    min-width: 40px;
+    text-align: center;
+    transition: all 0.3s ease;
+    padding: 0.5rem 0.75rem;
+}
+
+#coursesPagination .page-link:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(78, 115, 223, 0.3);
+}
+
+#coursesPagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+#coursesPagination .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+/* Иконки в кнопках */
+#coursesPagination .page-link i {
+    font-size: 0.9rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    #coursesPagination .pagination {
+        gap: 3px;
+    }
+    
+    #coursesPagination .page-link {
+        min-width: 36px;
+        padding: 0.375rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    #coursesPagination .page-link i {
+        font-size: 0.8rem;
+    }
+}
 .spinner-border {
     animation: pulse 1.5s ease infinite;
 }
@@ -864,3 +933,46 @@ html {
 #about {
     animation: fadeIn 1s ease;
 }   
+/* ФОРСИРОВАННЫЕ СТИЛИ ДЛЯ ПАГИНАЦИИ */
+#coursesPagination {
+    display: flex !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 30px auto !important;
+    min-height: 50px !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+#coursesPagination ul.pagination {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+}
+
+#coursesPagination .page-link {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 11 !important;
+}
+
+/* Дебаг стили */
+.debug-pagination {
+    border: 3px solid #ff0000 !important;
+    background: rgba(255, 0, 0, 0.1) !important;
+}
+
+.debug-pagination ul {
+    border: 2px solid #00ff00 !important;
+    background: rgba(0, 255, 0, 0.1) !important;
+}
+
+.debug-pagination .page-link {
+    border: 1px solid #0000ff !important;
+    background: rgba(0, 0, 255, 0.1) !important;
+}

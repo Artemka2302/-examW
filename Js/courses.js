@@ -67,23 +67,46 @@ async function loadCourses() {
  * Отображает курсы на текущей странице
  */
 function displayCourses() {
-    const container = document.getElementById('coursesContainer');
-    const pagination = document.getElementById('coursesPagination');
+    console.log('=== DISPLAY COURSES START ===');
     
-    if (!container || filteredCourses.length === 0) {
-        showNoCoursesState();
+    const container = document.getElementById('coursesContainer');
+    const loading = document.getElementById('coursesLoading');
+    const noCourses = document.getElementById('noCourses');
+    
+    console.log('Элементы:', {container: !!container, loading: !!loading});
+    console.log('Данные:', {filtered: filteredCourses.length, totalPages, currentPage});
+    
+    if (!container) {
+        console.error('❌ Контейнер не найден!');
         return;
     }
+    
+    // Скрываем loading
+    if (loading) {
+        loading.style.display = 'none';
+    }
+    
+    // Если нет курсов
+    if (filteredCourses.length === 0) {
+        if (noCourses) noCourses.style.display = 'block';
+        container.style.display = 'none';
+        return;
+    }   
+    
+    // Скрываем "нет курсов"
+    if (noCourses) noCourses.style.display = 'none';
     
     // Рассчитываем курсы для текущей страницы
     const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
     const endIndex = startIndex + COURSES_PER_PAGE;
     const pageCourses = filteredCourses.slice(startIndex, endIndex);
     
+    console.log(`📄 Страница ${currentPage}: ${pageCourses.length} курсов`);
+    
     // Очищаем контейнер
     container.innerHTML = '';
     
-    // Добавляем курсы в контейнер
+    // Добавляем курсы
     pageCourses.forEach(course => {
         const courseCard = createCourseCard(course);
         container.appendChild(courseCard);
@@ -91,116 +114,74 @@ function displayCourses() {
     
     // Показываем контейнер
     container.style.display = 'flex';
+    console.log('✅ Контейнер отображен');
     
-    // Обновляем пагинацию
-    updatePagination();
+    // Пагинация - только ОДИН вызов
+    console.log('🔢 Вызываем updatePagination...');
+    updatePagination(); // ← updatePagination сама управляет отображением
     
-    // Показываем пагинацию если нужно
-    if (totalPages > 1) {
-        pagination.style.display = 'flex';
-    } else {
-        pagination.style.display = 'none';
-    }
+    console.log('=== DISPLAY COURSES END ===');
 }
-
 /**
  * Создает карточку курса
  * @param {Object} course - Данные курса
  * @returns {HTMLElement} Элемент карточки
  */
 function createCourseCard(course) {
+    console.log('Создаем карточку для:', course.name);
+    
     const col = document.createElement('div');
-    col.className = 'col-md-6 col-lg-4';
+    col.className = 'col-md-6 col-lg-4 mb-4';
     
-    // Определяем цвет бейджа по уровню
-    let levelClass = '';
-    let levelText = '';
+    // Перевод уровня
+    let levelText = course.level;
+    let levelClass = 'bg-secondary';
     
-    switch(course.level?.toLowerCase()) {
-        case 'beginner':
-            levelClass = 'level-beginner';
+    switch(course.level) {
+        case 'Beginner':
             levelText = 'Начальный';
+            levelClass = 'bg-success';
             break;
-        case 'intermediate':
-            levelClass = 'level-intermediate';
+        case 'Intermediate':
             levelText = 'Средний';
+            levelClass = 'bg-warning';
             break;
-        case 'advanced':
-            levelClass = 'level-advanced';
+        case 'Advanced':
             levelText = 'Продвинутый';
+            levelClass = 'bg-danger';
             break;
-        default:
-            levelClass = 'level-beginner';
-            levelText = course.level || 'Не указан';
     }
     
-    // Рассчитываем общую продолжительность в часах
-    const totalHours = course.total_length * course.week_length;
-    
-    // Форматируем даты начала
-    const startDates = course.start_dates?.slice(0, 3) || []; // Берем первые 3 даты
-    const formattedDates = startDates.map(date => {
-        const d = new Date(date);
-        return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
-    }).join(', ');
-    
+    // Простая версия - только текст
     col.innerHTML = `
-        <div class="card course-card shadow-sm h-100">
-            <!-- Бейдж уровня -->
-            <div class="course-level-badge ${levelClass}">
-                ${levelText}
-            </div>
-            
-            <!-- Изображение курса -->
-            <div class="course-image">
-                <i class="bi bi-translate"></i>
-            </div>
-            
-            <!-- Тело карточки -->
-            <div class="course-body">
-                <h5 class="course-title">${course.name}</h5>
-                <p class="course-description" data-bs-toggle="tooltip" title="${course.description}">
-                    ${truncateText(course.description, 120)}
-                </p>
+        <div class="card h-100 border shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">${course.name}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">
+                    <i class="bi bi-person"></i> ${course.teacher}
+                </h6>
+                <p class="card-text">${course.description.substring(0, 100)}...</p>
                 
-                <!-- Детали курса -->
-                <div class="course-details">
-                    <div class="course-details-item">
-                        <span class="course-details-label">Преподаватель</span>
-                        <span class="course-details-value">${course.teacher}</span>
-                    </div>
-                    <div class="course-details-item">
-                        <span class="course-details-label">Часов</span>
-                        <span class="course-details-value">${totalHours}</span>
-                    </div>
-                    <div class="course-details-item">
-                        <span class="course-details-label">Недель</span>
-                        <span class="course-details-value">${course.total_length}</span>
-                    </div>
+                <div class="mt-3">
+                    <span class="badge ${levelClass}">${levelText}</span>
+                    <span class="badge bg-info ms-2">
+                        <i class="bi bi-calendar-week"></i> ${course.total_length} недель
+                    </span>
+                    <span class="badge bg-primary ms-2">
+                        <i class="bi bi-cash"></i> ${course.course_fee_per_hour} ₽/час
+                    </span>
                 </div>
             </div>
-            
-            <!-- Футер карточки -->
-            <div class="course-action">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <span class="text-muted small">Стоимость:</span>
-                        <h6 class="mb-0">${course.course_fee_per_hour} ₽/час</h6>
-                    </div>
-                    <button type="button" 
-                            class="btn btn-primary btn-sm"
-                            onclick="selectCourse(${course.id})"
-                            data-course-id="${course.id}">
-                        <i class="bi bi-info-circle me-1"></i>Подробнее
-                    </button>
-                </div>
+            <div class="card-footer bg-transparent">
+                <button class="btn btn-primary w-100" onclick="selectCourse(${course.id})">
+                    <i class="bi bi-info-circle me-1"></i>Подробнее
+                </button>
             </div>
         </div>
     `;
     
     return col;
-}
-
+} 
 /**
  * Инициализирует пагинацию
  */
@@ -212,67 +193,93 @@ function initPagination() {
 /**
  * Обновляет отображение пагинации
  */
+/**
+ * Обновляет отображение пагинации
+ */
+/**
+ * Обновляет отображение пагинации
+ */
 function updatePagination() {
+    console.log('🔄 updatePagination ВЫЗВАНА');
+    
     const pagination = document.getElementById('coursesPagination');
-    if (!pagination) return;
+    console.log('pagination элемент найден:', !!pagination);
     
-    const ul = pagination.querySelector('ul');
-    if (!ul) return;
+    if (!pagination) {
+        console.error('❌ Нет элемента пагинации!');
+        return;
+    }
     
-    ul.innerHTML = '';
+    // Рассчитываем totalPages ЕЩЕ РАЗ на всякий случай
+    const calculatedTotalPages = Math.ceil(filteredCourses.length / COURSES_PER_PAGE);
+    console.log(`🔢 totalPages: ${calculatedTotalPages} (${filteredCourses.length} / ${COURSES_PER_PAGE})`);
+    
+    // Если 1 страница или меньше - скрываем
+    if (calculatedTotalPages <= 1) {
+        pagination.style.display = 'none';
+        console.log('🔢 Пагинация скрыта (1 страница)');
+        return;
+    }
+    
+    // Создаем HTML пагинации
+    let html = '<ul class="pagination justify-content-center">';
     
     // Кнопка "Назад"
-    const prevLi = document.createElement('li');
-    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-    prevLi.innerHTML = `
-        <a class="page-link" href="#" onclick="changePage(${currentPage - 1})" aria-label="Предыдущая">
-            <i class="bi bi-chevron-left"></i>
-        </a>
+    html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
     `;
-    ul.appendChild(prevLi);
     
-    // Номера страниц
-    for (let i = 1; i <= totalPages; i++) {
-        const li = document.createElement('li');
-        li.className = `page-item ${i === currentPage ? 'active' : ''}`;
-        li.innerHTML = `
-            <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+    // Кнопки страниц
+    for (let i = 1; i <= calculatedTotalPages; i++) {
+        html += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
         `;
-        ul.appendChild(li);
     }
     
     // Кнопка "Вперед"
-    const nextLi = document.createElement('li');
-    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-    nextLi.innerHTML = `
-        <a class="page-link" href="#" onclick="changePage(${currentPage + 1})" aria-label="Следующая">
-            <i class="bi bi-chevron-right"></i>
-        </a>
+    html += `
+        <li class="page-item ${currentPage === calculatedTotalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
     `;
-    ul.appendChild(nextLi);
-}
-
+    
+    html += '</ul>';
+    
+    // Обновляем элемент
+    pagination.innerHTML = html;
+    pagination.style.display = 'flex';
+    
+    console.log('✅ Пагинация создана и показана');
+    console.log('HTML:', html);
+} 
 /**
  * Меняет текущую страницу
  * @param {number} page - Номер страницы
  */
 function changePage(page) {
-    if (page < 1 || page > totalPages) return;
+    console.log(`🎯 changePage вызвана: ${page}`);
+    
+    // Пересчитываем totalPages
+    const calculatedTotalPages = Math.ceil(filteredCourses.length / COURSES_PER_PAGE);
+    
+    if (page < 1 || page > calculatedTotalPages) {
+        console.log(`❌ Неверная страница: ${page} (допустимо 1-${calculatedTotalPages})`);
+        return;
+    }
     
     currentPage = page;
-    displayCourses();
+    console.log(`✅ Установлена страница: ${currentPage}`);
     
-    // Прокручиваем к началу блока курсов
-    const coursesSection = document.getElementById('courses');
-    if (coursesSection) {
-        const headerHeight = document.querySelector('header')?.offsetHeight || 80;
-        const sectionPosition = coursesSection.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-        window.scrollTo({
-            top: sectionPosition,
-            behavior: 'smooth'
-        });
-    }
-}
+    displayCourses();
+} 
 
 /**
  * Показывает/скрывает состояние загрузки
@@ -405,21 +412,32 @@ function resetSearch() {
  * Выбирает курс для оформления заявки
  * @param {number} courseId - ID курса
  */
-function selectCourse(courseId) {
-    console.log('Выбран курс:', courseId);
+async function selectCourse(courseId) {
+    console.log('Выбран курс ID:', courseId);
     
-    // Находим курс
-    const course = allCourses.find(c => c.id === courseId);
-    if (!course) {
-        showNotification('Курс не найден', 'danger');
-        return;
-    }
-    
-    // Показываем подробную информацию о курсе
-    showCourseDetails(course);
-    
-    // Здесь позже добавим открытие модального окна для заявки
-    showNotification(`Выбран курс: "${course.name}"`, 'success');
+    try {
+        // Показываем загрузку
+        showNotification('Загружаем информацию о курсе...', 'info', 2000);
+        
+        // Находим курс в уже загруженных данных
+        let course = allCourses.find(c => c.id === courseId);
+        
+        // Если не нашли, пробуем загрузить с сервера
+        if (!course) {
+            course = await getCourseById(courseId);
+        }
+        
+        if (!course) {
+            throw new Error('Курс не найден');
+        }
+        
+        // Показываем детали
+        showCourseDetails(course);
+        
+    } catch (error) {
+        console.error('Ошибка при выборе курса:', error);
+        showNotification(`Ошибка: ${error.message}`, 'danger');
+    }   
 }
 
 /**
@@ -427,75 +445,93 @@ function selectCourse(courseId) {
  * @param {Object} course - Данные курса
  */
 function showCourseDetails(course) {
-    const totalHours = course.total_length * course.week_length;
+    console.log('🎨 showCourseDetails для:', course.name);
     
-    const modalContent = `
-        <div class="modal fade" id="courseDetailsModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">${course.name}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <h6>Описание</h6>
-                                <p>${course.description}</p>
-                                
-                                <h6 class="mt-4">Детали курса</h6>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <p><strong>Преподаватель:</strong><br>${course.teacher}</p>
-                                        <p><strong>Уровень:</strong><br>${course.level}</p>
-                                    </div>
-                                    <div class="col-6">
-                                        <p><strong>Длительность:</strong><br>${course.total_length} недель</p>
-                                        <p><strong>Часов в неделю:</strong><br>${course.week_length}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h6>Стоимость</h6>
-                                        <p class="display-6 text-primary">${course.course_fee_per_hour} ₽/час</p>
-                                        <p class="text-muted">Всего: ${totalHours * course.course_fee_per_hour} ₽</p>
-                                        
-                                        <h6 class="mt-4">Даты начала</h6>
-                                        <ul class="list-unstyled">
-                                            ${course.start_dates?.slice(0, 5).map(date => {
-                                                const d = new Date(date);
-                                                return `<li>• ${formatDate(date)} ${formatTime(date.split('T')[1])}</li>`;
-                                            }).join('') || '<li>Не указаны</li>'}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                        <button type="button" class="btn btn-primary" onclick="openOrderForm(${course.id})">
-                            <i class="bi bi-pencil-square me-1"></i>Подать заявку
-                        </button>
-                    </div>
+    // Удаляем старый модальный если есть
+    let oldModal = document.getElementById('courseDetailsModal');
+    if (oldModal) {
+        oldModal.remove();
+        console.log('Старый модальный удален');
+    }
+    
+    // Рассчитываем часы и стоимость
+    const totalHours = course.total_length * course.week_length;
+    const totalCost = totalHours * course.course_fee_per_hour;
+    
+    // Форматируем даты
+    let datesHtml = '<li>Даты не указаны</li>';
+    if (course.start_dates && course.start_dates.length > 0) {
+        datesHtml = course.start_dates.slice(0, 3).map(dateStr => {
+            try {
+                const date = new Date(dateStr);
+                return `<li>${date.toLocaleDateString('ru-RU')}</li>`;
+            } catch(e) {
+                return `<li>${dateStr}</li>`;
+            }
+        }).join('');
+    }
+    
+    // Создаем модальное окно
+    const modalHTML = `
+    <div class="modal fade" id="courseDetailsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">${course.name}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Описание</h6>
+                    <p>${course.description}</p>
+                    
+                    <h6 class="mt-4">Информация</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Преподаватель:</strong></td>
+                            <td>${course.teacher}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Уровень:</strong></td>
+                            <td><span class="badge bg-primary">${course.level}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Длительность:</strong></td>
+                            <td>${course.total_length} недель (${totalHours} часов)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Стоимость:</strong></td>
+                            <td><strong>${course.course_fee_per_hour} ₽/час</strong> (всего: ${totalCost} ₽)</td>
+                        </tr>
+                    </table>
+                    
+                    <h6 class="mt-4">Даты начала</h6>
+                    <ul>${datesHtml}</ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-primary" onclick="openOrderForm(${course.id})">
+                        Подать заявку
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
     `;
     
-    // Добавляем модальное окно в DOM
-    let modal = document.getElementById('courseDetailsModal');
-    if (modal) {
-        modal.remove();
-    }
-    
-    document.body.insertAdjacentHTML('beforeend', modalContent);
+    // Добавляем в DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    console.log('Модальное окно добавлено в DOM');
     
     // Показываем модальное окно
-    const modalInstance = new bootstrap.Modal(document.getElementById('courseDetailsModal'));
-    modalInstance.show();
+    const modalElement = document.getElementById('courseDetailsModal');
+    if (modalElement) {
+        console.log('Элемент модального найден, показываем...');
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        console.log('Модальное окно показано');
+    } else {
+        console.error('❌ Элемент модального не найден после добавления!');
+    }
 }
 
 /**

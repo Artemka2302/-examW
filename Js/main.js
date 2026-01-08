@@ -7,12 +7,10 @@ loadApiKey();
  * Инициализация страницы
  */
 async function initPage() {
-    console.log('Инициализация главной страницы...');
+    console.log('🚀 Инициализация страницы начата');
     
     // Проверяем доступность API
-    setTimeout(() => {
-        checkApiAvailability();
-    }, 1000);
+    checkApiAvailability();
     
     // Инициализируем tooltip'ы Bootstrap
     initTooltips();
@@ -20,10 +18,17 @@ async function initPage() {
     // Настраиваем плавный скролл для якорных ссылок
     setupSmoothScroll();
     
-    // Инициализируем модуль курсов
-    await initCourses();
+    console.log('🔍 Вызываем initCourses()');
     
-    console.log('Страница готова к работе');
+    // Инициализируем модуль курсов
+    if (typeof initCourses === 'function') {
+        await initCourses();
+        console.log('✅ Курсы инициализированы');
+    } else {
+        console.error('❌ Функция initCourses не найдена!');
+    }
+    
+    console.log('🎉 Страница готова к работе');
 }
 
 /**
@@ -35,6 +40,7 @@ function initTooltips() {
         tooltips.forEach(tooltip => {
             new bootstrap.Tooltip(tooltip);
         });
+        console.log(`✅ Инициализировано ${tooltips.length} tooltip'ов`);
     }
 }
 
@@ -42,43 +48,50 @@ function initTooltips() {
  * Настраивает плавный скролл для якорных ссылок
  */
 function setupSmoothScroll() {
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    const anchors = document.querySelectorAll('a[href^="#"]');
+    if (anchors.length === 0) return;
+    
+    anchors.forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const href = this.getAttribute('href');
             
-            // Пропускаем ссылки без якоря или на другую страницу
-            if (href === '#' || href.startsWith('#!')) {
+            // Пропускаем пустые ссылки и ссылки на модальные окна
+            if (href === '#' || href.startsWith('#!') || href.includes('modal')) {
                 return;
             }
             
             const target = document.querySelector(href);
-            if (target) {
+            if (target && href !== '#') {
                 e.preventDefault();
                 
-                // Вычисляем положение с учетом фиксированной шапки
-                const headerHeight = document.querySelector('header')?.offsetHeight || 80;
+                const header = document.querySelector('header');
+                const headerHeight = header ? header.offsetHeight : 80;
+                
+                // Проверяем поддержку smooth scroll
                 const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - headerHeight;
                 
-                window.scrollTo({
-                    top: targetPosition,
-                    behavior: 'smooth'
-                });
-                
-                // Обновляем активное состояние в навигации (если нужно)
-                updateActiveNavLink(href);
+                try {
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                } catch (error) {
+                    // Fallback для старых браузеров
+                    window.scrollTo(0, targetPosition);
+                }
             }
         });
     });
+    console.log(`✅ Плавный скролл настроен для ${anchors.length} ссылок`);
 }
 
-/**
- * Обновляет активное состояние в навигации
- */
-function updateActiveNavLink(href) {
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === href) {
-            link.classList.add('active');
-        }
-    });
+// Запускаем инициализацию когда DOM загружен
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPage);
+} else {
+    initPage();
 }
+
+// Экспортируем функции для глобального доступа
+window.initPage = initPage;
+window.initTooltips = initTooltips;

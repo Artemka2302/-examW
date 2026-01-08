@@ -159,3 +159,16 @@ async function updateOrder(orderId, orderData) {
 async function deleteOrder(orderId) {
     return await apiRequest(`/api/orders/${orderId}`, 'DELETE');
 }
+/**
+ * Получить информацию о конкретном курсе
+ * @param {number} courseId - ID курса
+ * @returns {Promise<Object>} Данные курса
+ */
+async function getCourseById(courseId) {
+    try {
+        return await apiRequest(`/api/courses/${courseId}`, 'GET');
+    } catch (error) {
+        console.error(`Ошибка получения курса ${courseId}:`, error);
+        return null;
+    }
+}
