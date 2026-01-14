@@ -504,7 +504,114 @@
             </button>
         </div>
     </div>
-</section>  
+</section>
+
+    <!-- БЛОК РЕПЕТИТОРОВ -->
+    <section id="tutors" class="py-5 my-5 bg-light">
+        <div class="container">
+            <!-- Заголовок -->
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">
+                    <i class="bi bi-people text-primary me-2"></i>
+                    Наши репетиторы
+                </h2>
+                <p class="lead text-muted mb-4">
+                    Профессиональные преподаватели с международным опытом
+                </p>
+            </div>
+            
+            <!-- Форма поиска репетиторов -->
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-10">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="card-title mb-4">
+                                <i class="bi bi-search me-2"></i>Найти репетитора
+                            </h5>
+                            <form id="tutorSearchForm">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="tutorLanguage" class="form-label">Язык</label>
+                                        <select class="form-select" id="tutorLanguage">
+                                            <option value="">Все языки</option>
+                                            <option value="Russian">Русский</option>
+                                            <option value="English">Английский</option>
+                                            <option value="Spanish">Испанский</option>
+                                            <option value="French">Французский</option>
+                                            <option value="German">Немецкий</option>
+                                            <option value="Japanese">Японский</option>
+                                            <option value="Chinese">Китайский</option>
+                                            <option value="Italian">Итальянский</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="tutorLevel" class="form-label">Уровень</label>
+                                        <select class="form-select" id="tutorLevel">
+                                            <option value="">Все уровни</option>
+                                            <option value="Beginner">Начальный</option>
+                                            <option value="Intermediate">Средний</option>
+                                            <option value="Advanced">Продвинутый</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="tutorExperience" class="form-label">Опыт (лет)</label>
+                                        <select class="form-select" id="tutorExperience">
+                                            <option value="">Любой опыт</option>
+                                            <option value="1">1+ лет</option>
+                                            <option value="3">3+ лет</option>
+                                            <option value="5">5+ лет</option>
+                                            <option value="10">10+ лет</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary" 
+                                                    id="resetTutorSearch">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Сбросить
+                                            </button>
+                                            <button type="submit" 
+                                                    class="btn btn-primary px-4">
+                                                <i class="bi bi-search me-1"></i>Найти
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Состояние загрузки -->
+            <div id="tutorsLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-3 text-muted">Загружаем список репетиторов...</p>
+            </div>
+            
+            <!-- Контейнер для репетиторов -->
+            <div id="tutorsContainer" class="row g-4 mb-5" style="display: none;">
+                <!-- Репетиторы будут добавляться сюда динамически -->
+            </div>
+            
+            <!-- Состояние "нет репетиторов" -->
+            <div id="noTutors" class="text-center py-5" style="display: none;">
+                <i class="bi bi-person-x text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">Репетиторы не найдены</h4>
+                <p class="text-muted">Попробуйте изменить параметры поиска</p>
+            </div>
+            
+            <!-- Выбор репетитора -->
+            <div class="text-center mt-5">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Выберите репетитора для оформления индивидуальных занятий
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
     <!-- Весь контент страницы будет здесь -->
