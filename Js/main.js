@@ -28,6 +28,16 @@ async function initPage() {
         console.error('❌ Функция initCourses не найдена!');
     }
     
+    console.log('🔍 Вызываем initTutors()');
+    
+    // Инициализируем модуль репетиторов
+    if (typeof initTutors === 'function') {
+        await initTutors();
+        console.log('✅ Репетиторы инициализированы');
+    } else {
+        console.error('❌ Функция initTutors не найдена!');
+    }
+    
     console.log('🎉 Страница готова к работе');
 }
 

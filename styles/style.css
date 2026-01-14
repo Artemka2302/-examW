@@ -976,3 +976,121 @@ html {
     border: 1px solid #0000ff !important;
     background: rgba(0, 0, 255, 0.1) !important;
 }
+/* ========== БЛОК РЕПЕТИТОРОВ ========== */
+
+#tutors.bg-light {
+    background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%) !important;
+    border-radius: 20px;
+    margin-top: 4rem;
+    margin-bottom: 4rem;
+}
+
+/* Карточки репетиторов */
+.tutor-card {
+    border: 2px solid transparent;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.tutor-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary-color);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.tutor-avatar {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tutor-avatar i {
+    color: var(--primary-color);
+}
+
+/* Языки репетиторов */
+#tutors .card-body h6.small {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+#tutors .card-body p {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+/* Стоимость */
+#tutors .card-body h4.text-primary {
+    font-weight: 700;
+    margin-top: 0.25rem;
+}
+
+/* Кнопка выбора */
+#tutors .btn-outline-primary {
+    border-width: 2px;
+    font-weight: 500;
+    padding: 0.375rem 1rem;
+}
+
+#tutors .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Форма поиска репетиторов */
+#tutorSearchForm .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+#tutorSearchForm .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+/* Адаптивность */
+@media (max-width: 992px) {
+    #tutors {
+        padding: 2rem 0 !important;
+        margin-top: 2rem !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    .tutor-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    #tutorSearchForm .row.g-3 > .col-md-4 {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .tutor-avatar {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .tutor-avatar i {
+        font-size: 2.5rem !important;
+    }
+    
+    #tutors .card-title {
+        font-size: 1.1rem;
+    }
+}
