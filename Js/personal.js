@@ -62,6 +62,9 @@ async function loadOrders() {
             // Инициализируем пагинацию
             initOrdersPagination();
             
+            // Обновляем статистику
+            updateOrdersStatistics();
+            
             // Показываем уведомление
             if (orders.length === 0) {
                 showNotification('У вас пока нет заявок', 'info');
@@ -79,8 +82,7 @@ async function loadOrders() {
         // Скрываем индикатор загрузки
         showLoadingStatePersonal(false);
     }
-}
-
+} 
 /**
  * Отображает заявки на текущей странице
  */
@@ -110,6 +112,8 @@ function displayOrders() {
             tableBody.innerHTML = '';
         }
         hideOrdersPagination();
+        // Обновляем статистику даже если заявок нет
+        updateOrdersStatistics();
         return;
     }
     
@@ -137,9 +141,11 @@ function displayOrders() {
     // Показываем пагинацию
     updateOrdersPagination();
     
+    // Обновляем статистику
+    updateOrdersStatistics();
+    
     console.log('✅ Заявки отображены в таблице');
-}
-
+} 
 /**
  * Создает строку таблицы для заявки
  * @param {Object} order - Данные заявки
@@ -583,7 +589,7 @@ function calculateEditOrderCost() {
     
     // Округляем
     newPrice = Math.round(newPrice);
-    
+
     // Обновляем отображение
     updateEditOrderDisplay(newPrice, persons);
     
@@ -844,6 +850,9 @@ async function saveEditedOrder() {
         // Обновляем список заявок
         await loadOrders();
         
+        // Обновляем статистику
+        updateOrdersStatistics();
+        
         console.log('✅ Заявка обновлена:', result);
         
     } catch (error) {
@@ -1074,14 +1083,72 @@ async function deleteOrderConfirmed(orderId) {
         // Обновляем список заявок
         await loadOrders();
         
+        // Обновляем статистику
+        updateOrdersStatistics();
+        
         console.log('✅ Заявка удалена:', result);
         
     } catch (error) {
         console.error('❌ Ошибка удаления заявки:', error);
         showNotification(`Ошибка: ${error.message}`, 'danger');
     }
+}   
+function createOrderRow(order, orderNumber) {
+    console.log('📝 Создание строки для заявки:', order.id);
+    
+    const row = document.createElement('tr');
+    row.setAttribute('data-order-id', order.id);
+    
+    // Определяем тип заявки (курс или репетитор)
+    let itemName = 'Не указано';
+    if (order.course_id) {
+        itemName = `Курс #${order.course_id}`;
+        // Можно добавить загрузку названия курса
+    } else if (order.tutor_id) {
+        itemName = `Репетитор #${order.tutor_id}`;
+        // Можно добавить загрузку имени репетитора
+    }
+    
+    // Форматируем дату
+    let formattedDate = 'Не указана';
+    if (order.date_start) {
+        try {
+            const date = new Date(order.date_start);
+            formattedDate = date.toLocaleDateString('ru-RU');
+        } catch (e) {
+            formattedDate = order.date_start;
+        }
+    }
+    
+    // Форматируем время
+    let formattedTime = order.time_start || 'Не указано';
+    
+    // Форматируем стоимость
+    const formattedPrice = order.price ? `${order.price.toLocaleString('ru-RU')} ₽` : '0 ₽';
+    
+    row.innerHTML = `
+        <th scope="row">${orderNumber}</th>
+        <td>${itemName}</td>
+        <td>${formattedDate}</td>
+        <td>${formattedTime}</td>
+        <td><strong>${formattedPrice}</strong></td>
+        <td>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-info" onclick="viewOrderDetails(${order.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button type="button" class="btn btn-warning" onclick="editOrder(${order.id})">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="btn btn-danger" onclick="deleteOrderConfirm(${order.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </td>
+    `;
+    
+    return row;
 }
-
 // ========== ЭКСПОРТ ФУНКЦИЙ ==========
 
 // Экспортируем функции для глобального доступа
@@ -1098,4 +1165,40 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initPersonalPage);
 } else {
     initPersonalPage();
+}
+function updateOrdersStatistics() {
+    console.log('📊 Обновление статистики заявок...');
+    
+    const totalOrdersElement = document.getElementById('totalOrdersCount');
+    const totalPriceElement = document.getElementById('totalOrdersPrice');
+    const totalPersonsElement = document.getElementById('totalPersonsCount');
+    
+    if (!totalOrdersElement || !totalPriceElement || !totalPersonsElement) {
+        console.error('❌ Элементы статистики не найдены');
+        return;
+    }
+    
+    // Рассчитываем статистику
+    const totalOrders = allOrders.length;
+    let totalPrice = 0;
+    let totalPersons = 0;
+    
+    allOrders.forEach(order => {
+        totalPrice += order.price || 0;
+        totalPersons += order.persons || 0;
+    });
+    
+    // Форматируем стоимость
+    const formattedPrice = totalPrice.toLocaleString('ru-RU') + ' ₽';
+    
+    // Обновляем элементы
+    totalOrdersElement.textContent = totalOrders;
+    totalPriceElement.textContent = formattedPrice;
+    totalPersonsElement.textContent = totalPersons;
+    
+    console.log('✅ Статистика обновлена:', {
+        totalOrders,
+        totalPrice,
+        totalPersons    
+    });
 }
