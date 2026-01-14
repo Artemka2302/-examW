@@ -10,52 +10,196 @@
     <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
-    <!-- Содержимое личного кабинета будет здесь -->
     <!-- ШАПКА САЙТА (для личного кабинета) -->
-<header>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow">
-        <div class="container">
-            <!-- Логотип и название -->
-            <a class="navbar-brand d-flex align-items-center" href="index.html">
-                <i class="bi bi-translate fs-3 me-2"></i>
-                <div>
-                    <span class="fw-bold">PolyLang</span>
-                    <small class="d-block" style="font-size: 0.8rem; opacity: 0.8;">Личный кабинет</small>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow">
+            <div class="container">
+                <!-- Логотип и название -->
+                <a class="navbar-brand d-flex align-items-center" href="index.html">
+                    <i class="bi bi-translate fs-3 me-2"></i>
+                    <div>
+                        <span class="fw-bold">PolyLang</span>
+                        <small class="d-block" style="font-size: 0.8rem; opacity: 0.8;">Личный кабинет</small>
+                    </div>
+                </a>
+                
+                <!-- Кнопка бургер-меню -->
+                <button class="navbar-toggler" type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#personalNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <!-- Меню личного кабинета -->
+                <div class="collapse navbar-collapse" id="personalNavbar">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <!-- Кнопка обновления -->
+                        <li class="nav-item">
+                            <button class="btn btn-outline-light me-2" id="refreshOrders">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Обновить
+                            </button>
+                        </li>
+                        <!-- Назад на главную -->
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-outline-light" href="index.html">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                На главную
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-            </a>
-            
-            <!-- Кнопка бургер-меню -->
-            <button class="navbar-toggler" type="button" 
-                    data-bs-toggle="collapse" 
-                    data-bs-target="#personalNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <!-- Меню личного кабинета -->
-            <div class="collapse navbar-collapse" id="personalNavbar">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <!-- Назад на главную -->
-                    <li class="nav-item">
-                        <a class="nav-link btn btn-outline-light" href="index.html">
-                            <i class="bi bi-arrow-left me-1"></i>
-                            На главную
-                        </a>
-                    </li>
-                </ul>
+            </div>
+        </nav>
+        
+        <!-- Отступ для фиксированной шапки -->
+        <div style="height: 80px;"></div>
+    </header>
+    
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="container py-5">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="display-5 fw-bold mb-4">
+                    <i class="bi bi-person-circle text-primary me-2"></i>
+                    Личный кабинет
+                </h1>
+                <p class="lead text-muted mb-5">
+                    Здесь вы можете управлять своими заявками на курсы и занятия с репетиторами
+                </p>
             </div>
         </div>
-    </nav>
+        
+        <!-- БЛОК ЗАЯВОК -->
+        <div class="card border-0 shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check me-2"></i>
+                        Мои заявки
+                    </h5>
+                    <span class="badge bg-light text-primary" id="ordersCount">0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                
+                <!-- Состояние загрузки -->
+                <div id="ordersLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Загружаем список заявок...</p>
+                </div>
+                
+                <!-- Таблица заявок -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="ordersTable">
+                        <thead>
+                            <tr>
+                                <th scope="col" width="5%">#</th>
+                                <th scope="col" width="25%">Курс/Репетитор</th>
+                                <th scope="col" width="15%">Дата</th>
+                                <th scope="col" width="15%">Время</th>
+                                <th scope="col" width="15%">Стоимость</th>
+                                <th scope="col" width="25%">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <!-- Заявки будут добавляться сюда динамически -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Состояние "нет заявок" -->
+                <div id="noOrders" class="text-center py-5" style="display: none;">
+                    <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3">Заявок нет</h4>
+                    <p class="text-muted mb-4">У вас пока нет оформленных заявок</p>
+                    <a href="index.html" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Создать первую заявку
+                    </a>
+                </div>
+                
+                <!-- Пагинация -->
+                <nav id="ordersPagination" aria-label="Навигация по страницам заявок">
+                    <ul class="pagination justify-content-center">
+                        <!-- Пагинация будет добавляться сюда динамически -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Информационная панель -->
+        <div class="row mt-4">
+            <div class="col-md-4 mb-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <i class="bi bi-clock-history text-primary fs-1 mb-3"></i>
+                        <h5>Статистика</h5>
+                        <p class="text-muted small">Всего заявок: <span id="totalOrdersCount">0</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <i class="bi bi-currency-exchange text-success fs-1 mb-3"></i>
+                        <h5>Общая стоимость</h5>
+                        <p class="text-muted small">Сумма всех заявок: <span id="totalOrdersPrice">0 ₽</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people text-info fs-1 mb-3"></i>
+                        <h5>Участники</h5>
+                        <p class="text-muted small">Всего студентов: <span id="totalPersonsCount">0</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
     
-    <!-- Отступ для фиксированной шапки -->
-    <div style="height: 80px;"></div>
-</header>
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- ФУТЕР -->
+    <footer class="bg-dark text-white py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>PolyLang School</h5>
+                    <p class="text-muted">Языковая школа нового поколения</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Контакты</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-telephone me-2"></i>+7 (495) 123-45-67</li>
+                        <li><i class="bi bi-envelope me-2"></i>info@polylang.ru</li>
+                        <li><i class="bi bi-geo-alt me-2"></i>Москва, ул. Примерная, 1</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Социальные сети</h5>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white"><i class="bi bi-telegram fs-4"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-vk fs-4"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-youtube fs-4"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-instagram fs-4"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="text-muted my-4">
+            <div class="text-center text-muted">
+                <small>© 2024 PolyLang School. Все права защищены.</small>
+            </div>
+        </div>
+    </footer>
     
-    <!-- Наши скрипты -->
-    <script src="Js/utils.js"></script>
-    <script src="Js/config.js"></script>
-    <script src="Js/api.js"></script>
-    <script src="Js/personal.js"></script>
+ <!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Наши скрипты -->
+<script src="Js/utils.js"></script>
+<script src="Js/config.js"></script>
+<script src="Js/api.js"></script>
+<script src="Js/personal.js"></script>
 </body>
 </html>

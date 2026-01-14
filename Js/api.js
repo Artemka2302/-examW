@@ -172,3 +172,48 @@ async function getCourseById(courseId) {
         return null;
     }
 }
+
+/**
+ * Получить информацию о конкретном репетиторе
+ * @param {number} tutorId - ID репетитора
+ * @returns {Promise<Object>} Данные репетитора
+ */
+async function getTutorById(tutorId) {
+    try {
+        return await apiRequest(`/api/tutors/${tutorId}`, 'GET');
+    } catch (error) {
+        console.error(`Ошибка получения репетитора ${tutorId}:`, error);
+        return null;
+    }
+}
+
+/**
+ * Получить информацию о конкретной заявке
+ * @param {number} orderId - ID заявки
+ * @returns {Promise<Object>} Данные заявки
+ */
+async function getOrderById(orderId) {
+    try {
+        return await apiRequest(`/api/orders/${orderId}`, 'GET');
+    } catch (error) {
+        console.error(`Ошибка получения заявки ${orderId}:`, error);
+        return null;
+    }
+}
+
+// ========== ЭКСПОРТ ФУНКЦИЙ API ==========
+
+// Экспортируем все API функции для глобального доступа
+window.getCourses = getCourses;
+window.getTutors = getTutors;
+window.getOrders = getOrders;
+window.createOrder = createOrder;
+window.updateOrder = updateOrder;
+window.deleteOrder = deleteOrder;
+window.getCourseById = getCourseById;
+window.getTutorById = getTutorById;
+window.getOrderById = getOrderById;
+window.apiRequest = apiRequest;
+window.getApiUrl = getApiUrl;
+window.setApiKey = setApiKey;
+window.loadApiKey = loadApiKey;

@@ -173,7 +173,7 @@ function createCourseCard(course) {
                 </div>
             </div>
             <div class="card-footer bg-transparent">
-                <button class="btn btn-primary w-100" onclick="selectCourse(${course.id})">
+                <button class="btn btn-primary w-100" onclick="selectCourseForOrder(${course.id})">
                     <i class="bi bi-info-circle me-1"></i>Подробнее
                 </button>
             </div>

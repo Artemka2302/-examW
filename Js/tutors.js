@@ -167,9 +167,7 @@ function createTutorCard(tutor) {
                             <span class="text-muted small">Стоимость:</span>
                             <h4 class="mb-0 text-primary">${tutor.price_per_hour || 0} ₽/час</h4>
                         </div>
-                        <button type="button" 
-                                class="btn btn-outline-primary btn-sm"
-                                onclick="selectTutor(${tutor.id})">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectTutorForOrder(${tutor.id})">
                             <i class="bi bi-eye me-1"></i>Выбрать
                         </button>
                     </div>
@@ -299,9 +297,3 @@ window.searchTutors = searchTutors;
 window.resetTutorSearch = resetTutorSearch;
 
 // Автозапуск
-setTimeout(() => {
-    console.log('🔧 Автозапуск модуля репетиторов');
-    if (typeof initTutors === 'function') {
-        initTutors();
-    }
-}, 100);    

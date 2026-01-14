@@ -1,0 +1,95 @@
+/* ========== СТИЛИ ЛИЧНОГО КАБИНЕТА ========== */
+
+/* Основные стили */
+body {
+    background-color: #f8f9fc;
+}
+
+/* Карточки статистики */
+.card.border-primary,
+.card.border-success,
+.card.border-info {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card.border-primary:hover,
+.card.border-success:hover,
+.card.border-info:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Таблица заявок */
+.table-hover tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(78, 115, 223, 0.05);
+}
+
+/* Кнопки действий */
+.btn-group .btn {
+    padding: 0.375rem 0.75rem;
+}
+
+/* Бейджи опций */
+.badge.bg-info,
+.badge.bg-warning,
+.badge.bg-primary,
+.badge.bg-success,
+.badge.bg-secondary,
+.badge.bg-danger {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .card.border-primary,
+    .card.border-success,
+    .card.border-info {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Стили для модальных окон в личном кабинете */
+.modal-content {
+    border-radius: 15px;
+    border: none;
+}
+
+.modal-header {
+    border-radius: 15px 15px 0 0;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Уведомления в личном кабинете */
+#notification-area {
+    z-index: 1060;
+}

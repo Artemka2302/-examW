@@ -39,6 +39,13 @@ async function initPage() {
     }
     
     console.log('🎉 Страница готова к работе');
+    console.log('📝 Вызываем initOrders()');
+if (typeof initOrders === 'function') {
+    await initOrders();
+    console.log('✅ Заявки инициализированы');
+} else {
+    console.error('❌ Функция initOrders не найдена!');
+}
 }
 
 /**
