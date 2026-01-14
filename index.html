@@ -627,6 +627,195 @@
     <script src="js/courses.js"></script>
     <script src="Js/tutors.js"></script>
     <script src="Js/main.js"></script>
-
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ЗАЯВКИ -->
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderModalLabel">
+                        <i class="bi bi-pencil-square text-primary me-2"></i>
+                        <span id="orderModalTitle">Оформление заявки</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="orderForm">
+                        <!-- Тип заявки (скрытое поле) -->
+                        <input type="hidden" id="orderType" name="orderType" value="">
+                        <input type="hidden" id="orderItemId" name="orderItemId" value="">
+                        
+                        <div class="row">
+                            <!-- Левая колонка: Основная информация -->
+                            <div class="col-md-6">
+                                <!-- Выбранный курс/репетитор -->
+                                <div class="mb-3" id="selectedItemInfo">
+                                    <h6>Выбранный курс/репетитор:</h6>
+                                    <div class="alert alert-info py-2" id="selectedItemName">
+                                        Не выбрано
+                                    </div>
+                                </div>
+                                
+                                <!-- Дата начала -->
+                                <div class="mb-3">
+                                    <label for="orderDate" class="form-label">
+                                        <i class="bi bi-calendar3 me-1"></i>Дата начала
+                                    </label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="orderDate" 
+                                           name="orderDate"
+                                           required>
+                                    <div class="form-text">Выберите дату начала занятий</div>
+                                </div>
+                                
+                                <!-- Время -->
+                                <div class="mb-3">
+                                    <label for="orderTime" class="form-label">
+                                        <i class="bi bi-clock me-1"></i>Время занятия
+                                    </label>
+                                    <select class="form-select" id="orderTime" name="orderTime" required>
+                                        <option value="">Выберите время</option>
+                                        <option value="09:00">09:00-11:00</option>
+                                        <option value="12:00">12:00-14:00</option>
+                                        <option value="15:00">15:00-17:00</option>
+                                        <option value="18:00">18:00-20:00</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Количество студентов -->
+                                <div class="mb-3">
+                                    <label for="orderPersons" class="form-label">
+                                        <i class="bi bi-people me-1"></i>Количество студентов
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="orderPersons" 
+                                           name="orderPersons"
+                                           min="1" 
+                                           max="20" 
+                                           value="1"
+                                           required>
+                                    <div class="form-text">От 1 до 20 человек</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Правая колонка: Дополнительные опции и стоимость -->
+                            <div class="col-md-6">
+                                <h6 class="mb-3">
+                                    <i class="bi bi-gear me-1"></i>Дополнительные опции
+                                </h6>
+                                
+                                <!-- Опции заказа -->
+                                <div class="mb-3" id="orderOptions">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="optionEarly" name="early_registration">
+                                        <label class="form-check-label" for="optionEarly">
+                                            <strong>Ранняя регистрация</strong>
+                                            <small class="d-block text-muted">Скидка 10% при записи за месяц</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="optionGroup" name="group_enrollment">
+                                        <label class="form-check-label" for="optionGroup">
+                                            <strong>Групповая запись</strong>
+                                            <small class="d-block text-muted">Скидка 15% для групп от 5 человек</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="optionIntensive" name="intensive_course">
+                                        <label class="form-check-label" for="optionIntensive">
+                                            <strong>Интенсивный курс</strong>
+                                            <small class="d-block text-muted">+20% к стоимости (5+ часов в неделю)</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="optionMaterials" name="supplementary">
+                                        <label class="form-check-label" for="optionMaterials">
+                                            <strong>Дополнительные материалы</strong>
+                                            <small class="d-block text-muted">+2000 ₽ за студента</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="optionPersonal" name="personalized">
+                                        <label class="form-check-label" for="optionPersonal">
+                                            <strong>Индивидуальные занятия</strong>
+                                            <small class="d-block text-muted">+1500 ₽ в неделю</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="optionExcursions" name="excursions">
+                                        <label class="form-check-label" for="optionExcursions">
+                                            <strong>Культурные экскурсии</strong>
+                                            <small class="d-block text-muted">+25% к стоимости</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="optionAssessment" name="assessment">
+                                        <label class="form-check-label" for="optionAssessment">
+                                            <strong>Оценка уровня</strong>
+                                            <small class="d-block text-muted">+300 ₽</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="optionInteractive" name="interactive">
+                                        <label class="form-check-label" for="optionInteractive">
+                                            <strong>Интерактивная платформа</strong>
+                                            <small class="d-block text-muted">+50% к стоимости</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <!-- Расчет стоимости -->
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <i class="bi bi-calculator me-1"></i> Расчет стоимости
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-2">
+                                            <div class="col-6">Базовая стоимость:</div>
+                                            <div class="col-6 text-end" id="baseCost">0 ₽</div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-6">Надбавки:</div>
+                                            <div class="col-6 text-end text-success" id="surcharges">0 ₽</div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-6">Скидки:</div>
+                                            <div class="col-6 text-end text-danger" id="discounts">0 ₽</div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-6"><strong>Итого:</strong></div>
+                                            <div class="col-6 text-end">
+                                                <h4 class="text-primary mb-0" id="totalCost">0 ₽</h4>
+                                                <small class="text-muted" id="costPerPerson">0 ₽/чел</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Отмена
+                    </button>
+                    <button type="button" class="btn btn-primary" id="submitOrderBtn">
+                        <i class="bi bi-check-circle me-1"></i>Отправить заявку
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
