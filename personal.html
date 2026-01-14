@@ -201,5 +201,165 @@
 <script src="Js/config.js"></script>
 <script src="Js/api.js"></script>
 <script src="Js/personal.js"></script>
+<!-- Модальное окно для редактирования заявки -->
+<div class="modal fade" id="editOrderModal" tabindex="-1" aria-labelledby="editOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editOrderModalLabel">
+                    <i class="bi bi-pencil-square text-primary me-2"></i>
+                    <span id="editModalTitle">Редактирование заявки</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editOrderForm">
+                    <!-- Скрытые поля -->
+                    <input type="hidden" id="editOrderId" name="editOrderId" value="">
+                    <input type="hidden" id="editOrderType" name="editOrderType" value="">
+                    
+                    <!-- Информация о выбранном курсе/репетиторе -->
+                    <div class="mb-3">
+                        <h6>Выбранный курс/репетитор:</h6>
+                        <div class="alert alert-info py-2" id="editSelectedItemName">
+                            Не выбрано
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Левая колонка -->
+                        <div class="col-md-6">
+                            <!-- Дата начала -->
+                            <div class="mb-3">
+                                <label for="editOrderDate" class="form-label">
+                                    <i class="bi bi-calendar3 me-1"></i>Дата начала
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="editOrderDate" 
+                                       name="editOrderDate"
+                                       required>
+                            </div>
+                            
+                            <!-- Время -->
+                            <div class="mb-3">
+                                <label for="editOrderTime" class="form-label">
+                                    <i class="bi bi-clock me-1"></i>Время занятия
+                                </label>
+                                <select class="form-select" id="editOrderTime" name="editOrderTime" required>
+                                    <option value="">Выберите время</option>
+                                    <option value="09:00">09:00-11:00</option>
+                                    <option value="12:00">12:00-14:00</option>
+                                    <option value="15:00">15:00-17:00</option>
+                                    <option value="18:00">18:00-20:00</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Количество студентов -->
+                            <div class="mb-3">
+                                <label for="editOrderPersons" class="form-label">
+                                    <i class="bi bi-people me-1"></i>Количество студентов
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="editOrderPersons" 
+                                       name="editOrderPersons"
+                                       min="1" 
+                                       max="20" 
+                                       value="1"
+                                       required>
+                            </div>
+                        </div>
+                        
+                        <!-- Правая колонка: Дополнительные опции -->
+                        <div class="col-md-6">
+                            <h6 class="mb-3">
+                                <i class="bi bi-gear me-1"></i>Дополнительные опции
+                            </h6>
+                            
+                            <!-- Опции заказа -->
+                            <div class="mb-3" id="editOrderOptions">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="editOptionEarly" name="early_registration">
+                                    <label class="form-check-label" for="editOptionEarly">
+                                        <strong>Ранняя регистрация</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="editOptionGroup" name="group_enrollment">
+                                    <label class="form-check-label" for="editOptionGroup">
+                                        <strong>Групповая запись</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="editOptionIntensive" name="intensive_course">
+                                    <label class="form-check-label" for="editOptionIntensive">
+                                        <strong>Интенсивный курс</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="editOptionMaterials" name="supplementary">
+                                    <label class="form-check-label" for="editOptionMaterials">
+                                        <strong>Дополнительные материалы</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="editOptionPersonal" name="personalized">
+                                    <label class="form-check-label" for="editOptionPersonal">
+                                        <strong>Индивидуальные занятия</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="editOptionExcursions" name="excursions">
+                                    <label class="form-check-label" for="editOptionExcursions">
+                                        <strong>Культурные экскурсии</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="editOptionAssessment" name="assessment">
+                                    <label class="form-check-label" for="editOptionAssessment">
+                                        <strong>Оценка уровня</strong>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editOptionInteractive" name="interactive">
+                                    <label class="form-check-label" for="editOptionInteractive">
+                                        <strong>Интерактивная платформа</strong>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Стоимость -->
+                            <div class="card border-primary mt-3">
+                                <div class="card-header bg-primary text-white py-2">
+                                    <i class="bi bi-calculator me-1"></i> Текущая стоимость
+                                </div>
+                                <div class="card-body py-3">
+                                    <h4 class="text-primary mb-0" id="editOrderPrice">0 ₽</h4>
+                                    <small class="text-muted" id="editPricePerPerson">0 ₽/чел</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Отмена
+                </button>
+                <button type="button" class="btn btn-primary" id="saveEditOrderBtn">
+                    <i class="bi bi-check-circle me-1"></i>Сохранить изменения
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

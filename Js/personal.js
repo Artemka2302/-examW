@@ -9,6 +9,9 @@ let filteredOrders = [];
 let currentOrdersPage = 1;
 let totalOrdersPages = 1;
 
+// Глобальные переменные для редактирования
+let editingOrderData = null;
+
 /**
  * Инициализация личного кабинета
  */
@@ -29,6 +32,7 @@ async function initPersonalPage() {
     
     // Настраиваем обработчики событий
     setupPersonalEventListeners();
+    setupEditOrderListeners();
     
     console.log('✅ Личный кабинет инициализирован');
 }
@@ -51,7 +55,6 @@ async function loadOrders() {
             filteredOrders = [...orders];
             
             console.log(`✅ Загружено заявок: ${orders.length}`);
-            console.log('Пример заявки:', orders[0]);
             
             // Отображаем заявки
             displayOrders();
@@ -153,10 +156,8 @@ function createOrderRow(order, orderNumber) {
     let itemName = 'Не указано';
     if (order.course_id) {
         itemName = `Курс #${order.course_id}`;
-        // TODO: Можно загрузить название курса по ID
     } else if (order.tutor_id) {
         itemName = `Репетитор #${order.tutor_id}`;
-        // TODO: Можно загрузить имя репетитора по ID
     }
     
     // Форматируем дату
@@ -340,15 +341,6 @@ function setupPersonalEventListeners() {
             await loadOrders();
         });
     }
-    
-    // Форма поиска заявок (если будет добавлена позже)
-    const searchForm = document.getElementById('orderSearchForm');
-    if (searchForm) {
-        searchForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            searchOrders();
-        });
-    }
 }
 
 /**
@@ -360,7 +352,7 @@ async function viewOrderDetails(orderId) {
     
     try {
         // Загружаем данные заявки
-        const order = await apiRequest(`/api/orders/${orderId}`, 'GET');
+        const order = await getOrderById(orderId);
         
         if (!order) {
             throw new Error('Заявка не найдена');
@@ -487,10 +479,8 @@ function showOrderDetailsModal(order) {
     }
 }
 
-/**
- * Редактирование заявки
- * @param {number} orderId - ID заявки
- */
+// ========== РЕДАКТИРОВАНИЕ ЗАЯВОК ==========
+
 /**
  * Редактирование заявки
  * @param {number} orderId - ID заявки
@@ -499,6 +489,9 @@ async function editOrder(orderId) {
     console.log('✏️ Редактирование заявки:', orderId);
     
     try {
+        // Показываем загрузку
+        showNotification('Загрузка данных заявки...', 'info');
+        
         // Загружаем данные заявки
         const order = await getOrderById(orderId);
         
@@ -506,154 +499,312 @@ async function editOrder(orderId) {
             throw new Error('Заявка не найдена');
         }
         
-        // Создаем простое информационное модальное окно
-        showEditInfoModal(orderId);
+        // Сохраняем данные
+        editingOrderData = order;
+        
+        // Заполняем форму редактирования
+        await fillEditOrderForm(order);
+        
+        // Открываем модальное окно редактирования
+        openEditOrderModal();
+        
+        // Скрываем уведомление
+        showNotification('Форма редактирования загружена', 'success', 2000);
         
     } catch (error) {
         console.error('Ошибка редактирования заявки:', error);
         showNotification(`Ошибка: ${error.message}`, 'danger');
     }
 }
-function showEditInfoModal(orderId) {
-    console.log('📋 Показ инфо-модального окна для редактирования заявки:', orderId);
+function calculateEditOrderCost() {
+    console.log('🧮 Расчет стоимости для редактирования...');
     
-    // Удаляем старое модальное окно если есть
-    let oldModal = document.getElementById('editInfoModal');
-    if (oldModal) {
-        oldModal.remove();
+    if (!editingOrderData) {
+        console.log('❌ Нет данных заявки для расчета');
+        return editingOrderData?.price || 0;
     }
     
-    // Создаем HTML простого модального окна
-    const modalHTML = `
-    <div class="modal fade" id="editInfoModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-primary">
-                        <i class="bi bi-pencil-square me-2"></i>
-                        Редактирование заявки #${orderId}
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Для редактирования заявки необходимо перейти на главную страницу
-                    </div>
-                    <p class="text-muted">
-                        Форма редактирования доступна только на главной странице сайта, 
-                        так как использует общее модальное окно для создания и редактирования заявок.
-                    </p>
-                    <div class="text-center py-3">
-                        <a href="index.html" class="btn btn-primary btn-lg">
-                            <i class="bi bi-arrow-right-circle me-2"></i>Перейти на главную страницу
-                        </a>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    `;
+    // Получаем значения из формы
+    const dateStr = document.getElementById('editOrderDate').value;
+    const timeStr = document.getElementById('editOrderTime').value;
+    const persons = parseInt(document.getElementById('editOrderPersons').value) || 1;
     
-    // Добавляем в DOM
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    // Получаем состояние чекбоксов
+    const options = {
+        early_registration: document.getElementById('editOptionEarly').checked,
+        group_enrollment: document.getElementById('editOptionGroup').checked,
+        intensive_course: document.getElementById('editOptionIntensive').checked,
+        supplementary: document.getElementById('editOptionMaterials').checked,
+        personalized: document.getElementById('editOptionPersonal').checked,
+        excursions: document.getElementById('editOptionExcursions').checked,
+        assessment: document.getElementById('editOptionAssessment').checked,
+        interactive: document.getElementById('editOptionInteractive').checked
+    };
     
-    // Показываем модальное окно
-    const modalElement = document.getElementById('editInfoModal');
-    if (modalElement) {
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+    // Базовая стоимость из оригинальной заявки
+    const basePrice = editingOrderData.price || 0;
+    const basePersons = editingOrderData.persons || 1;
+    const basePricePerPerson = Math.round(basePrice / basePersons);
+    
+    // Рассчитываем новую стоимость на основе изменений
+    let newPrice = basePricePerPerson * persons;
+    
+    // Простая логика корректировки стоимости
+    // Можно сделать более сложную как на главной странице
+    if (options.supplementary) {
+        newPrice += 2000 * persons; // Дополнительные материалы
     }
+    
+    if (options.assessment) {
+        newPrice += 300; // Оценка уровня
+    }
+    
+    // Применяем скидки
+    if (options.early_registration) {
+        newPrice *= 0.9; // -10%
+    }
+    
+    if (options.group_enrollment && persons >= 5) {
+        newPrice *= 0.85; // -15%
+    }
+    
+    // Применяем надбавки
+    if (options.intensive_course) {
+        newPrice *= 1.2; // +20%
+    }
+    
+    if (options.excursions) {
+        newPrice *= 1.25; // +25%
+    }
+    
+    if (options.interactive) {
+        newPrice *= 1.5; // +50%
+    }
+    
+    // Округляем
+    newPrice = Math.round(newPrice);
+    
+    // Обновляем отображение
+    updateEditOrderDisplay(newPrice, persons);
+    
+    console.log('💰 Новая стоимость:', newPrice, '₽');
+    
+    return newPrice;
 }
-
 /**
- * Заполняет форму данными заявки для редактирования
+ * Обновляет отображение стоимости в форме редактирования
+ */
+function updateEditOrderDisplay(price, persons) {
+    const priceElement = document.getElementById('editOrderPrice');
+    const perPersonElement = document.getElementById('editPricePerPerson');
+    
+    if (!priceElement || !perPersonElement) {
+        console.error('❌ Элементы стоимости не найдены');
+        return;
+    }
+    
+    const perPerson = Math.round(price / persons);
+    
+    priceElement.textContent = `${price} ₽`;
+    perPersonElement.textContent = `${perPerson} ₽/чел`;
+}
+/**
+ * Заполняет форму редактирования данными заявки
  * @param {Object} order - Данные заявки
  */
-function fillOrderFormForEditing(order) {
-    console.log('📝 Заполнение формы для редактирования заявки:', order.id);
+async function fillEditOrderForm(order) {
+    console.log('📝 Заполнение формы редактирования заявки:', order.id);
     
-    // Обновляем заголовок
-    document.getElementById('orderModalTitle').textContent = 'Редактирование заявки';
+    // Проверяем существование элементов перед заполнением
+    const checkboxes = [
+        'editOptionEarly', 'editOptionGroup', 'editOptionIntensive',
+        'editOptionMaterials', 'editOptionPersonal', 'editOptionExcursions',
+        'editOptionAssessment', 'editOptionInteractive'
+    ];
     
-    // Заполняем поля
-    document.getElementById('orderDate').value = order.date_start;
-    document.getElementById('orderTime').value = order.time_start;
-    document.getElementById('orderPersons').value = order.persons;
+    // Проверяем, что все элементы существуют
+    const missingElements = [];
+    checkboxes.forEach(id => {
+        if (!document.getElementById(id)) {
+            missingElements.push(id);
+        }
+    });
     
-    // Заполняем чекбоксы
-    document.getElementById('optionEarly').checked = order.early_registration || false;
-    document.getElementById('optionGroup').checked = order.group_enrollment || false;
-    document.getElementById('optionIntensive').checked = order.intensive_course || false;
-    document.getElementById('optionMaterials').checked = order.supplementary || false;
-    document.getElementById('optionPersonal').checked = order.personalized || false;
-    document.getElementById('optionExcursions').checked = order.excursions || false;
-    document.getElementById('optionAssessment').checked = order.assessment || false;
-    document.getElementById('optionInteractive').checked = order.interactive || false;
-    
-    // Добавляем скрытое поле с ID заявки
-    let orderIdField = document.getElementById('editOrderId');
-    if (!orderIdField) {
-        orderIdField = document.createElement('input');
-        orderIdField.type = 'hidden';
-        orderIdField.id = 'editOrderId';
-        orderIdField.name = 'editOrderId';
-        document.getElementById('orderForm').appendChild(orderIdField);
+    if (missingElements.length > 0) {
+        console.error('❌ Не найдены элементы формы:', missingElements);
+        showNotification('Ошибка: форма редактирования не загружена полностью', 'danger');
+        return;
     }
-    orderIdField.value = order.id;
     
-    // Обновляем информацию о выбранном элементе
-    updateSelectedItemInfo();
+    // Устанавливаем заголовок
+    const titleElement = document.getElementById('editModalTitle');
+    if (titleElement) {
+        titleElement.textContent = `Редактирование заявки #${order.id}`;
+    }
     
-    // Пересчитываем стоимость
-    calculateTotalCost();
+    // Устанавливаем ID заявки
+    const idElement = document.getElementById('editOrderId');
+    if (idElement) {
+        idElement.value = order.id;
+    }
+    
+    // Заполняем основную информацию
+    const dateElement = document.getElementById('editOrderDate');
+    const timeElement = document.getElementById('editOrderTime');
+    const personsElement = document.getElementById('editOrderPersons');
+    
+    if (dateElement) {
+        dateElement.value = order.date_start || '';
+        // Устанавливаем минимальную и максимальную дату
+        const today = new Date();
+        dateElement.min = today.toISOString().split('T')[0];
+        const nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        dateElement.max = nextYear.toISOString().split('T')[0];
+    }
+    
+    if (timeElement) {
+        timeElement.value = order.time_start || '';
+    }
+    
+    if (personsElement) {
+        personsElement.value = order.persons || 1;
+    }
+    
+    // Заполняем чекбоксы опций (теперь безопасно)
+    document.getElementById('editOptionEarly').checked = order.early_registration || false;
+    document.getElementById('editOptionGroup').checked = order.group_enrollment || false;
+    document.getElementById('editOptionIntensive').checked = order.intensive_course || false;
+    document.getElementById('editOptionMaterials').checked = order.supplementary || false;
+    document.getElementById('editOptionPersonal').checked = order.personalized || false;
+    document.getElementById('editOptionExcursions').checked = order.excursions || false;
+    document.getElementById('editOptionAssessment').checked = order.assessment || false;
+    document.getElementById('editOptionInteractive').checked = order.interactive || false;
+    
+    // Отображаем информацию о курсе/репетиторе
+    await displayEditOrderItemInfo(order);
+    
+    // Отображаем текущую стоимость
+    updateEditOrderPrice(order);
+    
+    // Вызываем расчет стоимости после небольшой задержки
+    setTimeout(() => {
+        calculateEditOrderCost();
+    }, 100);
+    
+    console.log('✅ Форма редактирования заполнена');
+}
+/**
+ * Отображает информацию о курсе/репетиторе в форме редактирования
+ * @param {Object} order - Данные заявки
+ */
+async function displayEditOrderItemInfo(order) {
+    const itemNameElement = document.getElementById('editSelectedItemName');
+    const orderTypeElement = document.getElementById('editOrderType');
+    
+    if (!itemNameElement || !orderTypeElement) {
+        console.error('❌ Элементы формы редактирования не найдены');
+        return;
+    }
+    
+    if (order.course_id) {
+        // Это курс
+        orderTypeElement.value = 'course';
+        
+        try {
+            const course = await getCourseById(order.course_id);
+            if (course) {
+                itemNameElement.innerHTML = `
+                    <strong>Курс:</strong> ${course.name}<br>
+                    <small>Преподаватель: ${course.teacher}</small>
+                `;
+                itemNameElement.className = 'alert alert-info py-2';
+            } else {
+                itemNameElement.textContent = `Курс #${order.course_id} (не найден)`;
+                itemNameElement.className = 'alert alert-warning py-2';
+            }
+        } catch (error) {
+            itemNameElement.textContent = `Курс #${order.course_id}`;
+            itemNameElement.className = 'alert alert-warning py-2';
+        }
+        
+    } else if (order.tutor_id) {
+        // Это репетитор
+        orderTypeElement.value = 'tutor';
+        
+        try {
+            const tutor = await getTutorById(order.tutor_id);
+            if (tutor) {
+                itemNameElement.innerHTML = `
+                    <strong>Репетитор:</strong> ${tutor.name}<br>
+                    <small>Опыт: ${tutor.work_experience} лет</small>
+                `;
+                itemNameElement.className = 'alert alert-success py-2';
+            } else {
+                itemNameElement.textContent = `Репетитор #${order.tutor_id} (не найден)`;
+                itemNameElement.className = 'alert alert-warning py-2';
+            }
+        } catch (error) {
+            itemNameElement.textContent = `Репетитор #${order.tutor_id}`;
+            itemNameElement.className = 'alert alert-warning py-2';
+        }
+    } else {
+        itemNameElement.textContent = 'Не выбрано';
+        itemNameElement.className = 'alert alert-warning py-2';
+    }
 }
 
 /**
- * Открывает модальное окно в режиме редактирования
- * @param {number} orderId - ID заявки
+ * Обновляет отображение стоимости в форме редактирования
+ * @param {Object} order - Данные заявки
  */
-function openOrderModalForEditing(orderId) {
-    console.log('📋 Открытие модального окна для редактирования заявки:', orderId);
+function updateEditOrderPrice(order) {
+    const priceElement = document.getElementById('editOrderPrice');
+    const perPersonElement = document.getElementById('editPricePerPerson');
     
-    const modalElement = document.getElementById('orderModal');
+    if (!priceElement || !perPersonElement) {
+        console.error('❌ Элементы стоимости не найдены');
+        return;
+    }
+    
+    const price = order.price || 0;
+    const persons = order.persons || 1;
+    const perPerson = Math.round(price / persons);
+    
+    priceElement.textContent = `${price} ₽`;
+    perPersonElement.textContent = `${perPerson} ₽/чел`;
+}
+
+/**
+ * Открывает модальное окно редактирования
+ */
+function openEditOrderModal() {
+    console.log('📋 Открытие модального окна редактирования');
+    
+    const modalElement = document.getElementById('editOrderModal');
     if (!modalElement) {
-        console.error('❌ Модальное окно заявки не найдено');
-        
-        // Если модального окна нет на странице (мы в личном кабинете),
-        // нужно перейти на главную страницу для редактирования
-        showNotification('Для редактирования заявки перейдите на главную страницу', 'warning');
+        console.error('❌ Модальное окно редактирования не найдено');
+        showNotification('Ошибка: модальное окно редактирования не найдено', 'danger');
         return;
     }
     
     const modal = new bootstrap.Modal(modalElement);
     modal.show();
-    
-    // Сохраняем ID заявки в data-атрибут модального окна
-    modalElement.setAttribute('data-edit-order-id', orderId);
-    
-    // Обновляем кнопку отправки
-    const submitBtn = document.getElementById('submitOrderBtn');
-    if (submitBtn) {
-        submitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Сохранить изменения';
-        submitBtn.onclick = function() {
-            updateOrderOnServer(orderId);
-        };
-    }
 }
 
 /**
- * Обновляет заявку на сервере
- * @param {number} orderId - ID заявки
+ * Сохраняет изменения заявки
  */
-async function updateOrderOnServer(orderId) {
-    console.log('🔄 Обновление заявки на сервере:', orderId);
+async function saveEditedOrder() {
+    console.log('💾 Сохранение изменений заявки');
     
-    // Проверяем заполненность полей
-    if (!validateOrderForm()) {
+    if (!editingOrderData) {
+        showNotification('Нет данных для сохранения', 'warning');
+        return;
+    }
+    
+    // Проверяем валидность формы
+    if (!validateEditOrderForm()) {
         return;
     }
     
@@ -661,17 +812,31 @@ async function updateOrderOnServer(orderId) {
         // Показываем загрузку
         showNotification('Сохранение изменений...', 'info');
         
-        // Собираем данные
-        const orderData = collectOrderData();
+        // Рассчитываем новую стоимость
+        const newPrice = calculateEditOrderCost();
+        
+        // Собираем данные из формы
+        const orderData = collectEditOrderData();
+        
+        // Добавляем рассчитанную стоимость
+        const priceElement = document.getElementById('editOrderPrice');
+        if (priceElement && priceElement.textContent) {
+            const priceText = priceElement.textContent.replace(' ₽', '').trim();
+            orderData.price = parseInt(priceText) || editingOrderData.price;
+        } else {
+            orderData.price = editingOrderData.price;
+        }
+        
+        console.log('📦 Данные для обновления:', orderData);
         
         // Отправляем PUT запрос
-        const result = await updateOrder(orderId, orderData);
+        const result = await updateOrder(editingOrderData.id, orderData);
         
         // Успех
         showNotification('Заявка успешно обновлена!', 'success');
         
         // Закрываем модальное окно
-        const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editOrderModal'));
         if (modal) {
             modal.hide();
         }
@@ -686,6 +851,149 @@ async function updateOrderOnServer(orderId) {
         showNotification(`Ошибка: ${error.message}`, 'danger');
     }
 }
+
+/**
+ * Проверяет валидность формы редактирования
+ */
+function validateEditOrderForm() {
+    const orderDate = document.getElementById('editOrderDate').value;
+    const orderTime = document.getElementById('editOrderTime').value;
+    const orderPersons = document.getElementById('editOrderPersons').value;
+    
+    let errors = [];
+    
+    if (!orderDate) {
+        errors.push('Не указана дата начала');
+    }
+    
+    if (!orderTime) {
+        errors.push('Не указано время занятия');
+    }
+    
+    if (!orderPersons || orderPersons < 1 || orderPersons > 20) {
+        errors.push('Количество студентов должно быть от 1 до 20');
+    }
+    
+    if (errors.length > 0) {
+        showNotification(`Ошибки заполнения: ${errors.join(', ')}`, 'warning');
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Собирает данные из формы редактирования
+ */
+function collectEditOrderData() {
+    const orderDate = document.getElementById('editOrderDate').value;
+    const orderTime = document.getElementById('editOrderTime').value;
+    const orderPersons = parseInt(document.getElementById('editOrderPersons').value);
+    
+    // Собираем опции
+    const options = {
+        early_registration: document.getElementById('editOptionEarly').checked,
+        group_enrollment: document.getElementById('editOptionGroup').checked,
+        intensive_course: document.getElementById('editOptionIntensive').checked,
+        supplementary: document.getElementById('editOptionMaterials').checked,
+        personalized: document.getElementById('editOptionPersonal').checked,
+        excursions: document.getElementById('editOptionExcursions').checked,
+        assessment: document.getElementById('editOptionAssessment').checked,
+        interactive: document.getElementById('editOptionInteractive').checked
+    };
+    
+    // Базовые данные
+    let orderData = {
+        date_start: orderDate,
+        time_start: orderTime,
+        persons: orderPersons,
+        ...options
+    };
+    
+    // Сохраняем тип и ID (если они есть в оригинальной заявке)
+    if (editingOrderData.course_id) {
+        orderData.course_id = editingOrderData.course_id;
+        orderData.tutor_id = null;
+    } else if (editingOrderData.tutor_id) {
+        orderData.tutor_id = editingOrderData.tutor_id;
+        orderData.course_id = null;
+    }
+    
+    return orderData;
+}
+
+/**
+ * Настраивает обработчики для формы редактирования
+ */
+function setupEditOrderListeners() {
+    console.log('🔧 Настройка обработчиков формы редактирования');
+    
+    // Кнопка сохранения изменений
+    const saveBtn = document.getElementById('saveEditOrderBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', saveEditedOrder);
+    } else {
+        console.error('❌ Кнопка сохранения не найдена');
+    }
+    
+    // Добавляем обработчики для пересчета стоимости
+    const dateInput = document.getElementById('editOrderDate');
+    const timeSelect = document.getElementById('editOrderTime');
+    const personsInput = document.getElementById('editOrderPersons');
+    const checkboxes = document.querySelectorAll('#editOrderOptions input[type="checkbox"]');
+    
+    if (dateInput) {
+        dateInput.addEventListener('change', calculateEditOrderCost);
+    }
+    
+    if (timeSelect) {
+        timeSelect.addEventListener('change', calculateEditOrderCost);
+    }
+    
+    if (personsInput) {
+        personsInput.addEventListener('input', calculateEditOrderCost);
+        personsInput.addEventListener('change', calculateEditOrderCost);
+    }
+    
+    if (checkboxes.length > 0) {
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', calculateEditOrderCost);
+        });
+    }
+    
+    // Обработчики для закрытия модального окна
+    const modal = document.getElementById('editOrderModal');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', function() {
+            console.log('📋 Модальное окно редактирования открывается');
+        });
+        
+        modal.addEventListener('hidden.bs.modal', function () {
+            console.log('📋 Модальное окно редактирования закрыто');
+            editingOrderData = null;
+            
+            // Сбрасываем форму
+            const form = document.getElementById('editOrderForm');
+            if (form) form.reset();
+            
+            const itemNameElement = document.getElementById('editSelectedItemName');
+            if (itemNameElement) {
+                itemNameElement.textContent = 'Не выбрано';
+                itemNameElement.className = 'alert alert-warning py-2';
+            }
+            
+            const priceElement = document.getElementById('editOrderPrice');
+            const perPersonElement = document.getElementById('editPricePerPerson');
+            if (priceElement) priceElement.textContent = '0 ₽';
+            if (perPersonElement) perPersonElement.textContent = '0 ₽/чел';
+        });
+    } else {
+        console.error('❌ Модальное окно редактирования не найдено');
+    }
+    
+    console.log('✅ Обработчики формы редактирования настроены');
+}
+// ========== УДАЛЕНИЕ ЗАЯВОК ==========
 
 /**
  * Подтверждение удаления заявки
@@ -774,13 +1082,16 @@ async function deleteOrderConfirmed(orderId) {
     }
 }
 
-// Экспортируем функции
+// ========== ЭКСПОРТ ФУНКЦИЙ ==========
+
+// Экспортируем функции для глобального доступа
 window.initPersonalPage = initPersonalPage;
 window.viewOrderDetails = viewOrderDetails;
 window.editOrder = editOrder;
 window.deleteOrderConfirm = deleteOrderConfirm;
 window.deleteOrderConfirmed = deleteOrderConfirmed;
 window.changeOrdersPage = changeOrdersPage;
+window.saveEditedOrder = saveEditedOrder;
 
 // Автозапуск при загрузке страницы
 if (document.readyState === 'loading') {
