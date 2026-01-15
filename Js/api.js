@@ -1,37 +1,8 @@
 // ========== API КОНФИГУРАЦИЯ ==========
 
-// Базовый URL API
 const API_BASE_URL = 'http://exam-api-courses.std-900.ist.mospolytech.ru';
-
-// Определяем, где мы работаем
-const isLocalhost = window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1';
-const isGitHubPages = window.location.hostname.includes('github.io');
-
-// Выбираем URL в зависимости от окружения
-let BASE_URL;
-if (isLocalhost) {
-    // Локально - прямой доступ
-    BASE_URL = API_BASE_URL;
-    console.log('📍 Локальная разработка - прямой доступ к API');
-} else if (isGitHubPages) {
-    // GitHub Pages - через прокси (решаем проблему CORS)
-    BASE_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(API_BASE_URL);
-    console.log('🌐 GitHub Pages - используем CORS прокси');
-} else {
-    // Другие хостинги
-    BASE_URL = API_BASE_URL;
-    console.log('🚀 Продакшен окружение');
-}
-
-console.log('Настройки API:', {
-    hostname: window.location.hostname,
-    isLocalhost,
-    isGitHubPages,
-    BASE_URL
-});
-
 const DEFAULT_API_KEY = '32342745-3e72-4fcc-8f7a-a5a0c1703144';
+
 let API_KEY = DEFAULT_API_KEY;
 
 /**
@@ -74,20 +45,105 @@ function getApiUrl(endpoint) {
     // Убедимся, что endpoint начинается с /
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
     
-    // Для GitHub Pages URL уже содержит базовый URL через прокси
-    if (isGitHubPages) {
-        return `${BASE_URL}${normalizedEndpoint}?api_key=${API_KEY}`;
-    } else {
-        return `${BASE_URL}${normalizedEndpoint}?api_key=${API_KEY}`;
-    }
+    return `${API_BASE_URL}${normalizedEndpoint}?api_key=${API_KEY}`;
 }
 
 /**
- * Базовый запрос к API
+ * JSONP запрос (обход CORS для GitHub Pages)
+ * @param {string} url - URL для запроса
+ * @returns {Promise} Promise с результатом
+ */
+function jsonpRequest(url) {
+    return new Promise((resolve, reject) => {
+        // Создаем уникальное имя для callback
+        const callbackName = `jsonp_callback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Добавляем callback в window
+        window[callbackName] = function(data) {
+            // Очищаем
+            delete window[callbackName];
+            if (script.parentNode) {
+                script.parentNode.removeChild(script);
+            }
+            
+            console.log(`✅ JSONP ответ получен для: ${url}`);
+            
+            // Проверяем наличие ошибки в ответе
+            if (data && data.error) {
+                reject(new Error(data.error));
+            } else {
+                resolve(data);
+            }
+        };
+        
+        // Добавляем параметр callback в URL
+        const jsonpUrl = url + (url.includes('?') ? '&' : '?') + 
+                        `callback=${callbackName}&_=${Date.now()}`;
+        
+        // Создаем script тег
+        const script = document.createElement('script');
+        script.src = jsonpUrl;
+        script.type = 'text/javascript';
+        
+        // Обработчик ошибок
+        script.onerror = function() {
+            delete window[callbackName];
+            if (script.parentNode) {
+                script.parentNode.removeChild(script);
+            }
+            reject(new Error(`JSONP запрос не удался: ${url}`));
+        };
+        
+        // Таймаут
+        setTimeout(() => {
+            if (window[callbackName]) {
+                delete window[callbackName];
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
+                reject(new Error('JSONP таймаут'));
+            }
+        }, 10000); // 10 секунд таймаут
+        
+        // Добавляем script в DOM
+        document.head.appendChild(script);
+        
+        console.log(`🔧 JSONP запрос: ${jsonpUrl.substring(0, 100)}...`);
+    });
+}
+
+/**
+ * Универсальный запрос к API (использует fetch или JSONP)
  * @param {string} endpoint - Конечная точка API
  * @param {string} method - HTTP метод (GET, POST, PUT, DELETE)
- * @param {Object} data - Данные для отправки (для POST/PUT)
+ * @param {Object} data - Данные для отправки
  * @returns {Promise} Promise с результатом
+ */
+async function universalApiRequest(endpoint, method = 'GET', data = null) {
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1';
+    
+    // Для GET запросов на GitHub Pages пробуем JSONP
+    if (method === 'GET' && isGitHubPages && !isLocalhost) {
+        try {
+            console.log(`🌐 GitHub Pages: пытаемся JSONP для ${endpoint}`);
+            const url = getApiUrl(endpoint);
+            const result = await jsonpRequest(url);
+            return result;
+        } catch (jsonpError) {
+            console.warn(`JSONP не сработал для ${endpoint}:`, jsonpError);
+            // Пробуем fetch с тестовыми данными как запасной вариант
+            return getFallbackData(endpoint);
+        }
+    }
+    
+    // Для остальных случаев используем обычный fetch
+    return apiRequest(endpoint, method, data);
+}
+
+/**
+ * Обычный fetch запрос к API
  */
 async function apiRequest(endpoint, method = 'GET', data = null) {
     const url = getApiUrl(endpoint);
@@ -96,19 +152,13 @@ async function apiRequest(endpoint, method = 'GET', data = null) {
         throw new Error('Не удалось создать URL запроса');
     }
     
-    console.log(`API запрос: ${method} ${endpoint}`, {
-        url: url.substring(0, 100) + '...',
-        data
-    });
+    console.log(`API ${method} запрос: ${endpoint}`);
     
     const options = {
         method: method,
         headers: {
             'Content-Type': 'application/json'
-        },
-        // Для CORS на GitHub Pages
-        mode: 'cors',
-        cache: 'no-cache'
+        }
     };
     
     if (data && (method === 'POST' || method === 'PUT')) {
@@ -118,100 +168,235 @@ async function apiRequest(endpoint, method = 'GET', data = null) {
     try {
         const response = await fetch(url, options);
         
-        // Проверяем, что ответ получен
-        if (!response) {
-            throw new Error('Нет ответа от сервера');
-        }
-        
-        // Пробуем получить текст ответа
-        const responseText = await response.text();
-        
-        // Проверяем, является ли ответ JSON
-        let result;
-        try {
-            result = responseText ? JSON.parse(responseText) : {};
-        } catch (parseError) {
-            console.warn('Ответ не в формате JSON:', responseText);
-            throw new Error(`Сервер вернул невалидный JSON: ${responseText.substring(0, 100)}`);
-        }
-        
         if (!response.ok) {
-            throw new Error(result.error || `Ошибка ${response.status}: ${response.statusText}`);
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
+        const result = await response.json();
         console.log(`✅ API ответ от ${endpoint}:`, result);
         return result;
     } catch (error) {
         console.error('❌ Ошибка API запроса:', error);
         
-        // Более информативное сообщение об ошибке
-        let errorMessage = error.message;
-        if (error.message.includes('Failed to fetch') || 
-            error.message.includes('NetworkError') ||
-            error.message.includes('CORS')) {
-            errorMessage = 'Проблема с подключением к API. Возможно, CORS блокирует запрос.';
-            if (isGitHubPages) {
-                errorMessage += ' Используется прокси для GitHub Pages.';
-            }
+        // Если на GitHub Pages и fetch не сработал, возвращаем тестовые данные
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        if (isGitHubPages && method === 'GET') {
+            console.log('🔄 Возвращаем тестовые данные для GitHub Pages');
+            return getFallbackData(endpoint);
         }
         
-        showNotification(`Ошибка API: ${errorMessage}`, 'danger');
+        showNotification(`Ошибка API: ${error.message}`, 'danger');
         throw error;
     }
 }
 
 /**
+ * Возвращает тестовые данные для GitHub Pages
+ */
+function getFallbackData(endpoint) {
+    console.log(`📦 Используем тестовые данные для: ${endpoint}`);
+    
+    if (endpoint === '/api/courses' || endpoint === 'api/courses') {
+        return TEST_COURSES;
+    }
+    
+    if (endpoint === '/api/tutors' || endpoint === 'api/tutors') {
+        return TEST_TUTORS;
+    }
+    
+    if (endpoint.includes('/api/orders')) {
+        // Для заявок возвращаем пустой массив или тестовые данные
+        return [];
+    }
+    
+    // Для конкретного курса/репетитора
+    if (endpoint.includes('/api/courses/')) {
+        const id = parseInt(endpoint.split('/').pop());
+        return TEST_COURSES.find(course => course.id === id) || null;
+    }
+    
+    if (endpoint.includes('/api/tutors/')) {
+        const id = parseInt(endpoint.split('/').pop());
+        return TEST_TUTORS.find(tutor => tutor.id === id) || null;
+    }
+    
+    return [];
+}
+
+// ========== ТЕСТОВЫЕ ДАННЫЕ ==========
+
+const TEST_COURSES = [
+    {
+        "id": 1,
+        "name": "Introduction to Russian language",
+        "description": "A beginner course on Russian language learning.",
+        "teacher": "Viktor Sergeevich",
+        "level": "Beginner",
+        "total_length": 8,
+        "week_length": 2,
+        "start_dates": [
+            "2024-03-01T09:00:00",
+            "2024-04-01T09:00:00",
+            "2024-05-01T09:00:00"
+        ],
+        "course_fee_per_hour": 200,
+        "created_at": "2024-01-05T17:30:00"
+    },
+    {
+        "id": 2,
+        "name": "Advanced Spanish for Professionals",
+        "description": "Advanced Spanish course for business professionals.",
+        "teacher": "Luisa Martinez",
+        "level": "Advanced",
+        "total_length": 12,
+        "week_length": 3,
+        "start_dates": [
+            "2024-03-15T18:00:00",
+            "2024-04-15T18:00:00"
+        ],
+        "course_fee_per_hour": 300,
+        "created_at": "2024-01-10T10:15:00"
+    },
+    {
+        "id": 3,
+        "name": "French Conversation for Beginners",
+        "description": "Learn basic French conversation skills.",
+        "teacher": "Pierre Dupont",
+        "level": "Beginner",
+        "total_length": 10,
+        "week_length": 2,
+        "start_dates": [
+            "2024-02-20T17:00:00",
+            "2024-03-20T17:00:00"
+        ],
+        "course_fee_per_hour": 250,
+        "created_at": "2024-01-12T14:45:00"
+    },
+    {
+        "id": 4,
+        "name": "Japanese Language and Culture",
+        "description": "Comprehensive Japanese language and cultural studies.",
+        "teacher": "Akiko Tanaka",
+        "level": "Intermediate",
+        "total_length": 16,
+        "week_length": 3,
+        "start_dates": [
+            "2024-04-01T10:00:00"
+        ],
+        "course_fee_per_hour": 350,
+        "created_at": "2024-01-18T11:30:00"
+    },
+    {
+        "id": 5,
+        "name": "Italian Culinary Language Course",
+        "description": "Learn Italian through culinary vocabulary and culture.",
+        "teacher": "Marco Rossi",
+        "level": "Beginner",
+        "total_length": 8,
+        "week_length": 2,
+        "start_dates": [
+            "2024-03-10T15:00:00",
+            "2024-04-10T15:00:00"
+        ],
+        "course_fee_per_hour": 280,
+        "created_at": "2024-01-20T16:20:00"
+    }
+];
+
+const TEST_TUTORS = [
+    {
+        "id": 1,
+        "name": "Irina Petrovna",
+        "work_experience": 5,
+        "languages_spoken": ["English", "Spanish", "Russian"],
+        "languages_offered": ["Russian", "English"],
+        "language_level": "Advanced",
+        "price_per_hour": 500
+    },
+    {
+        "id": 2,
+        "name": "Viktor Sergeevich",
+        "work_experience": 8,
+        "languages_spoken": ["Russian", "English", "German"],
+        "languages_offered": ["Russian", "English"],
+        "language_level": "Advanced",
+        "price_per_hour": 600
+    },
+    {
+        "id": 3,
+        "name": "Luisa Martinez",
+        "work_experience": 6,
+        "languages_spoken": ["Spanish", "English", "French"],
+        "languages_offered": ["Spanish", "English"],
+        "language_level": "Advanced",
+        "price_per_hour": 550
+    },
+    {
+        "id": 4,
+        "name": "Pierre Dupont",
+        "work_experience": 4,
+        "languages_spoken": ["French", "English"],
+        "languages_offered": ["French"],
+        "language_level": "Intermediate",
+        "price_per_hour": 450
+    },
+    {
+        "id": 5,
+        "name": "Akiko Tanaka",
+        "work_experience": 7,
+        "languages_spoken": ["Japanese", "English"],
+        "languages_offered": ["Japanese"],
+        "language_level": "Advanced",
+        "price_per_hour": 650
+    },
+    {
+        "id": 6,
+        "name": "Marco Rossi",
+        "work_experience": 3,
+        "languages_spoken": ["Italian", "English"],
+        "languages_offered": ["Italian"],
+        "language_level": "Intermediate",
+        "price_per_hour": 400
+    }
+];
+
+// ========== API ФУНКЦИИ ==========
+
+/**
  * Получить список курсов
- * @returns {Promise<Array>} Массив курсов
  */
 async function getCourses() {
     try {
-        console.log('📚 Загрузка курсов...');
-        const courses = await apiRequest('/api/courses', 'GET');
-        console.log(`✅ Получено курсов: ${courses?.length || 0}`);
+        const courses = await universalApiRequest('/api/courses', 'GET');
+        console.log(`📚 Получено курсов: ${courses?.length || 0}`);
         return courses || [];
     } catch (error) {
         console.error('Ошибка получения курсов:', error);
-        // Возвращаем тестовые данные для разработки, если API недоступен
-        if (isGitHubPages) {
-            console.log('⚠️ Используем тестовые данные для GitHub Pages');
-            return getTestCourses();
-        }
-        return [];
+        return TEST_COURSES; // Возвращаем тестовые данные
     }
 }
 
 /**
  * Получить список репетиторов
- * @returns {Promise<Array>} Массив репетиторов
  */
 async function getTutors() {
     try {
-        console.log('👨‍🏫 Загрузка репетиторов...');
-        const tutors = await apiRequest('/api/tutors', 'GET');
-        console.log(`✅ Получено репетиторов: ${tutors?.length || 0}`);
+        const tutors = await universalApiRequest('/api/tutors', 'GET');
+        console.log(`👨‍🏫 Получено репетиторов: ${tutors?.length || 0}`);
         return tutors || [];
     } catch (error) {
         console.error('Ошибка получения репетиторов:', error);
-        // Возвращаем тестовые данные для разработки, если API недоступен
-        if (isGitHubPages) {
-            console.log('⚠️ Используем тестовые данные для GitHub Pages');
-            return getTestTutors();
-        }
-        return [];
+        return TEST_TUTORS; // Возвращаем тестовые данные
     }
 }
 
 /**
  * Получить список заявок пользователя
- * @returns {Promise<Array>} Массив заявок
  */
 async function getOrders() {
     try {
-        console.log('📋 Загрузка заявок...');
-        const orders = await apiRequest('/api/orders', 'GET');
-        console.log(`✅ Получено заявок: ${orders?.length || 0}`);
-        return orders || [];
+        return await apiRequest('/api/orders', 'GET');
     } catch (error) {
         console.error('Ошибка получения заявок:', error);
         return [];
@@ -220,188 +405,59 @@ async function getOrders() {
 
 /**
  * Создать новую заявку
- * @param {Object} orderData - Данные заявки
- * @returns {Promise<Object>} Созданная заявка
  */
 async function createOrder(orderData) {
-    try {
-        console.log('📝 Создание заявки:', orderData);
-        const result = await apiRequest('/api/orders', 'POST', orderData);
-        console.log('✅ Заявка создана:', result);
-        return result;
-    } catch (error) {
-        console.error('Ошибка создания заявки:', error);
-        throw error;
-    }
+    return await apiRequest('/api/orders', 'POST', orderData);
 }
 
 /**
  * Обновить существующую заявку
- * @param {number} orderId - ID заявки
- * @param {Object} orderData - Новые данные
- * @returns {Promise<Object>} Обновленная заявка
  */
 async function updateOrder(orderId, orderData) {
-    try {
-        console.log('✏️ Обновление заявки:', orderId, orderData);
-        const result = await apiRequest(`/api/orders/${orderId}`, 'PUT', orderData);
-        console.log('✅ Заявка обновлена:', result);
-        return result;
-    } catch (error) {
-        console.error('Ошибка обновления заявки:', error);
-        throw error;
-    }
+    return await apiRequest(`/api/orders/${orderId}`, 'PUT', orderData);
 }
 
 /**
  * Удалить заявку
- * @param {number} orderId - ID заявки
- * @returns {Promise<Object>} Результат удаления
  */
 async function deleteOrder(orderId) {
-    try {
-        console.log('🗑️ Удаление заявки:', orderId);
-        const result = await apiRequest(`/api/orders/${orderId}`, 'DELETE');
-        console.log('✅ Заявка удалена:', result);
-        return result;
-    } catch (error) {
-        console.error('Ошибка удаления заявки:', error);
-        throw error;
-    }
+    return await apiRequest(`/api/orders/${orderId}`, 'DELETE');
 }
 
 /**
  * Получить информацию о конкретном курсе
- * @param {number} courseId - ID курса
- * @returns {Promise<Object>} Данные курса
  */
 async function getCourseById(courseId) {
     try {
-        console.log(`📘 Загрузка курса ID: ${courseId}`);
-        const course = await apiRequest(`/api/courses/${courseId}`, 'GET');
-        console.log('✅ Курс загружен:', course?.name);
-        return course;
+        return await universalApiRequest(`/api/courses/${courseId}`, 'GET');
     } catch (error) {
         console.error(`Ошибка получения курса ${courseId}:`, error);
-        return null;
+        return TEST_COURSES.find(course => course.id === courseId) || null;
     }
 }
 
 /**
  * Получить информацию о конкретном репетиторе
- * @param {number} tutorId - ID репетитора
- * @returns {Promise<Object>} Данные репетитора
  */
 async function getTutorById(tutorId) {
     try {
-        console.log(`👤 Загрузка репетитора ID: ${tutorId}`);
-        const tutor = await apiRequest(`/api/tutors/${tutorId}`, 'GET');
-        console.log('✅ Репетитор загружен:', tutor?.name);
-        return tutor;
+        return await universalApiRequest(`/api/tutors/${tutorId}`, 'GET');
     } catch (error) {
         console.error(`Ошибка получения репетитора ${tutorId}:`, error);
-        return null;
+        return TEST_TUTORS.find(tutor => tutor.id === tutorId) || null;
     }
 }
 
 /**
  * Получить информацию о конкретной заявке
- * @param {number} orderId - ID заявки
- * @returns {Promise<Object>} Данные заявки
  */
 async function getOrderById(orderId) {
     try {
-        console.log(`📄 Загрузка заявки ID: ${orderId}`);
-        const order = await apiRequest(`/api/orders/${orderId}`, 'GET');
-        console.log('✅ Заявка загружена:', order?.id);
-        return order;
+        return await apiRequest(`/api/orders/${orderId}`, 'GET');
     } catch (error) {
         console.error(`Ошибка получения заявки ${orderId}:`, error);
         return null;
     }
-}
-
-// ========== ТЕСТОВЫЕ ДАННЫЕ ДЛЯ РАЗРАБОТКИ ==========
-
-/**
- * Тестовые данные курсов для GitHub Pages
- */
-function getTestCourses() {
-    console.log('📚 Загрузка тестовых данных курсов');
-    return [
-        {
-            id: 1,
-            name: "Английский для начинающих",
-            description: "Курс для тех, кто только начинает изучать английский язык",
-            teacher: "Ирина Петрова",
-            level: "Beginner",
-            total_length: 8,
-            week_length: 2,
-            start_dates: ["2024-03-01T09:00:00", "2024-04-01T09:00:00"],
-            course_fee_per_hour: 500,
-            created_at: "2024-01-15T10:00:00"
-        },
-        {
-            id: 2,
-            name: "Деловой английский",
-            description: "Курс для бизнес-коммуникации на английском языке",
-            teacher: "Александр Смирнов",
-            level: "Intermediate",
-            total_length: 12,
-            week_length: 3,
-            start_dates: ["2024-03-15T18:00:00", "2024-04-15T18:00:00"],
-            course_fee_per_hour: 800,
-            created_at: "2024-01-20T11:00:00"
-        },
-        {
-            id: 3,
-            name: "Испанский язык",
-            description: "Изучение испанского языка и культуры",
-            teacher: "Мария Гонсалес",
-            level: "Beginner",
-            total_length: 10,
-            week_length: 2,
-            start_dates: ["2024-03-10T17:00:00"],
-            course_fee_per_hour: 600,
-            created_at: "2024-01-25T12:00:00"
-        }
-    ];
-}
-
-/**
- * Тестовые данные репетиторов для GitHub Pages
- */
-function getTestTutors() {
-    console.log('👨‍🏫 Загрузка тестовых данных репетиторов');
-    return [
-        {
-            id: 1,
-            name: "Ирина Петрова",
-            work_experience: 5,
-            languages_spoken: ["Русский", "Английский", "Французский"],
-            languages_offered: ["Английский", "Французский"],
-            language_level: "Advanced",
-            price_per_hour: 1000
-        },
-        {
-            id: 2,
-            name: "Александр Смирнов",
-            work_experience: 8,
-            languages_spoken: ["Русский", "Английский", "Немецкий"],
-            languages_offered: ["Английский", "Немецкий"],
-            language_level: "Advanced",
-            price_per_hour: 1200
-        },
-        {
-            id: 3,
-            name: "Мария Гонсалес",
-            work_experience: 3,
-            languages_spoken: ["Испанский", "Русский", "Английский"],
-            languages_offered: ["Испанский"],
-            language_level: "Intermediate",
-            price_per_hour: 800
-        }
-    ];
 }
 
 // ========== ЭКСПОРТ ФУНКЦИЙ API ==========
@@ -417,6 +473,8 @@ window.getCourseById = getCourseById;
 window.getTutorById = getTutorById;
 window.getOrderById = getOrderById;
 window.apiRequest = apiRequest;
+window.universalApiRequest = universalApiRequest;
+window.jsonpRequest = jsonpRequest;
 window.getApiUrl = getApiUrl;
 window.setApiKey = setApiKey;
 window.loadApiKey = loadApiKey;
