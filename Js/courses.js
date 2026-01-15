@@ -173,7 +173,7 @@ function createCourseCard(course) {
                 </div>
             </div>
             <div class="card-footer bg-transparent">
-                <button class="btn btn-primary w-100" onclick="selectCourseForOrder(${course.id})">
+                <button class="btn btn-primary w-100" onclick="showCourseDetails(${course.id})">
                     <i class="bi bi-info-circle me-1"></i>Подробнее
                 </button>
             </div>
@@ -444,96 +444,146 @@ async function selectCourse(courseId) {
  * Показывает подробную информацию о курсе
  * @param {Object} course - Данные курса
  */
-function showCourseDetails(course) {
-    console.log('🎨 showCourseDetails для:', course.name);
+/**
+ * Показывает подробную информацию о курсе
+ * @param {number} courseId - ID курса
+ */
+async function showCourseDetails(courseId) {
+    console.log('🔍 Показать детали курса:', courseId);
+    console.log('Доступные курсы:', allCourses);
     
-    // Удаляем старый модальный если есть
-    let oldModal = document.getElementById('courseDetailsModal');
-    if (oldModal) {
-        oldModal.remove();
-        console.log('Старый модальный удален');
-    }
-    
-    // Рассчитываем часы и стоимость
-    const totalHours = course.total_length * course.week_length;
-    const totalCost = totalHours * course.course_fee_per_hour;
-    
-    // Форматируем даты
-    let datesHtml = '<li>Даты не указаны</li>';
-    if (course.start_dates && course.start_dates.length > 0) {
-        datesHtml = course.start_dates.slice(0, 3).map(dateStr => {
-            try {
-                const date = new Date(dateStr);
-                return `<li>${date.toLocaleDateString('ru-RU')}</li>`;
-            } catch(e) {
-                return `<li>${dateStr}</li>`;
-            }
-        }).join('');
-    }
-    
-    // Создаем модальное окно
-    const modalHTML = `
-    <div class="modal fade" id="courseDetailsModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">${course.name}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <h6>Описание</h6>
-                    <p>${course.description}</p>
-                    
-                    <h6 class="mt-4">Информация</h6>
-                    <table class="table table-sm">
-                        <tr>
-                            <td><strong>Преподаватель:</strong></td>
-                            <td>${course.teacher}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Уровень:</strong></td>
-                            <td><span class="badge bg-primary">${course.level}</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Длительность:</strong></td>
-                            <td>${course.total_length} недель (${totalHours} часов)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Стоимость:</strong></td>
-                            <td><strong>${course.course_fee_per_hour} ₽/час</strong> (всего: ${totalCost} ₽)</td>
-                        </tr>
-                    </table>
-                    
-                    <h6 class="mt-4">Даты начала</h6>
-                    <ul>${datesHtml}</ul>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    <button type="button" class="btn btn-primary" onclick="openOrderForm(${course.id})">
-                        Подать заявку
-                    </button>
+    try {
+        // Сначала ищем в allCourses
+        let course = allCourses.find(c => c.id === courseId);
+        console.log('Найден в allCourses:', course);
+        
+        // Если не нашли, пробуем загрузить с сервера
+        if (!course) {
+            console.log('Курс не найден в allCourses, загружаем с сервера...');
+            course = await getCourseById(courseId);
+            console.log('Загружен с сервера:', course);
+        }
+        
+        if (!course) {
+            throw new Error('Курс не найден');
+        }
+        
+        // Проверяем данные курса
+        console.log('Данные курса для отображения:', {
+            name: course.name,
+            description: course.description,
+            teacher: course.teacher,
+            level: course.level,
+            total_length: course.total_length,
+            week_length: course.week_length,
+            course_fee_per_hour: course.course_fee_per_hour,
+            start_dates: course.start_dates
+        });
+        
+        // Проверяем обязательные поля
+        if (!course.name || !course.description || !course.teacher) {
+            console.warn('Курс имеет недостающие данные:', course);
+        }
+        
+        // Рассчитываем часы и стоимость
+        const totalHours = (course.total_length || 0) * (course.week_length || 0);
+        const totalCost = totalHours * (course.course_fee_per_hour || 0);
+        
+        // Форматируем даты
+        let datesHtml = '<li>Даты не указаны</li>';
+        if (course.start_dates && Array.isArray(course.start_dates) && course.start_dates.length > 0) {
+            datesHtml = course.start_dates.slice(0, 3).map(dateStr => {
+                try {
+                    const date = new Date(dateStr);
+                    return `<li>${date.toLocaleDateString('ru-RU')}</li>`;
+                } catch(e) {
+                    console.warn('Ошибка форматирования даты:', dateStr, e);
+                    return `<li>${dateStr}</li>`;
+                }
+            }).join('');
+        }
+        
+        // Создаем модальное окно с безопасными значениями
+        const modalHTML = `
+        <div class="modal fade" id="courseDetailsModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${course.name || 'Без названия'}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>Описание</h6>
+                        <p>${course.description || 'Описание отсутствует'}</p>
+                        
+                        <h6 class="mt-4">Информация</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Преподаватель:</strong></td>
+                                <td>${course.teacher || 'Не указан'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Уровень:</strong></td>
+                                <td><span class="badge bg-primary">${course.level || 'Не указан'}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Длительность:</strong></td>
+                                <td>${course.total_length || 0} недель (${totalHours} часов)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Стоимость:</strong></td>
+                                <td><strong>${course.course_fee_per_hour || 0} ₽/час</strong> (всего: ${totalCost} ₽)</td>
+                            </tr>
+                        </table>
+                        
+                        <h6 class="mt-4">Даты начала</h6>
+                        <ul>${datesHtml}</ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        <button type="button" class="btn btn-primary" onclick="selectCourseForOrder(${course.id}); closeDetailsModal()">
+                            Подать заявку
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    `;
-    
-    // Добавляем в DOM
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    console.log('Модальное окно добавлено в DOM');
-    
-    // Показываем модальное окно
+        `;
+        
+        // Удаляем старое модальное окно если есть
+        let oldModal = document.getElementById('courseDetailsModal');
+        if (oldModal) {
+            oldModal.remove();
+        }
+        
+        // Добавляем в DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Показываем модальное окно
+        const modalElement = document.getElementById('courseDetailsModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+        
+    } catch (error) {
+        console.error('Ошибка при показе деталей курса:', error);
+        showNotification(`Ошибка: ${error.message}`, 'danger');
+    }
+        
+} 
+/**
+ * Закрывает модальное окно деталей курса
+ */
+function closeDetailsModal() {
     const modalElement = document.getElementById('courseDetailsModal');
     if (modalElement) {
-        console.log('Элемент модального найден, показываем...');
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-        console.log('Модальное окно показано');
-    } else {
-        console.error('❌ Элемент модального не найден после добавления!');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        }
     }
-}
-
+} 
 /**
  * Открывает форму заявки для выбранного курса
  * @param {number} courseId - ID курса
