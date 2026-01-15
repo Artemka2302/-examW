@@ -46,9 +46,19 @@ function getApiUrl(endpoint) {
     // Убедимся, что endpoint начинается с /
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
     
-    return `${API_BASE_URL}${normalizedEndpoint}?api_key=${API_KEY}`;
+    const originalUrl = `${API_BASE_URL}${normalizedEndpoint}?api_key=${API_KEY}`;
+    
+    // Если мы на GitHub Pages, добавляем прокси
+    if (window.location.hostname.includes('github.io')) {
+        // Используем CORS прокси
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(originalUrl);
+        console.log('🌐 Используем прокси для GitHub Pages');
+        return proxyUrl;
+    }
+    
+    // Локально работаем как обычно
+    return originalUrl;
 }
-
 /**
  * Базовый запрос к API
  * @param {string} endpoint - Конечная точка API
