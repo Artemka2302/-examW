@@ -1,40 +1,25 @@
 // ========== API КОНФИГУРАЦИЯ ==========
 
+// Импортируем конфигурацию
 const API_BASE_URL = 'http://exam-api-courses.std-900.ist.mospolytech.ru';
 const DEFAULT_API_KEY = '32342745-3e72-4fcc-8f7a-a5a0c1703144';
-
-// Рабочий CORS прокси
-const CORS_PROXY = 'https://api.corsproxy.io/?';
-// Или альтернатива: 'https://corsproxy.io/?'
 
 let API_KEY = DEFAULT_API_KEY;
 
 /**
- * Определяет, где мы работаем
- */
-function getEnvironment() {
-    const hostname = window.location.hostname;
-    return {
-        isLocalhost: hostname === 'localhost' || hostname === '127.0.0.1',
-        isGitHubPages: hostname.includes('github.io'),
-        hostname
-    };
-}
-
-/**
  * Устанавливает API ключ
- */ 
-
+ * @param {string} key - API ключ
+ */
 function setApiKey(key) {
     API_KEY = key;
     localStorage.setItem('polyLangApiKey', key);
     console.log('API ключ установлен:', key.substring(0, 8) + '...');
 }
 
-/** 
-  * Загружает API ключ из localStorage
+/**
+ * Загружает API ключ из localStorage
+ * Если нет в localStorage, использует ключ по умолчанию
  */
- 
 function loadApiKey() {
     const savedKey = localStorage.getItem('polyLangApiKey');
     if (savedKey) {
@@ -47,7 +32,9 @@ function loadApiKey() {
 }
 
 /**
- * Создает URL с API ключом (с CORS прокси если нужно)
+ * Создает URL с API ключом
+ * @param {string} endpoint - Конечная точка API
+ * @returns {string} Полный URL
  */
 function getApiUrl(endpoint) {
     if (!API_KEY) {
@@ -59,28 +46,15 @@ function getApiUrl(endpoint) {
     // Убедимся, что endpoint начинается с /
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
     
-    // Создаем базовый URL
-    const baseUrl = `${API_BASE_URL}${normalizedEndpoint}?api_key=${API_KEY}`;
-    
-    // Проверяем окружение
-    const env = getEnvironment();
-    
-    // Если на GitHub Pages - используем CORS прокси
-    if (env.isGitHubPages) {
-        const proxiedUrl = CORS_PROXY + encodeURIComponent(baseUrl);
-        console.log(`🌐 GitHub Pages: используем CORS прокси`);
-        console.log(`   Оригинальный URL: ${baseUrl}`);
-        console.log(`   Прокси URL: ${proxiedUrl.substring(0, 100)}...`);
-        return proxiedUrl;
-    }
-    
-    // Локально или на другом хостинге - прямой доступ
-    console.log(`📍 ${env.isLocalhost ? 'Локально' : 'Продакшен'}: прямой доступ к API`);
-    return baseUrl;
+    return `${API_BASE_URL}${normalizedEndpoint}?api_key=${API_KEY}`;
 }
 
 /**
- * Улучшенный запрос к API с обработкой CORS
+ * Базовый запрос к API
+ * @param {string} endpoint - Конечная точка API
+ * @param {string} method - HTTP метод (GET, POST, PUT, DELETE)
+ * @param {Object} data - Данные для отправки (для POST/PUT)
+ * @returns {Promise} Promise с результатом
  */
 async function apiRequest(endpoint, method = 'GET', data = null) {
     const url = getApiUrl(endpoint);
@@ -91,22 +65,11 @@ async function apiRequest(endpoint, method = 'GET', data = null) {
     
     console.log(`API запрос: ${method} ${endpoint}`);
     
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    
-    // Для CORS прокси могут потребоваться дополнительные заголовки
-    const env = getEnvironment();
-    if (env.isGitHubPages) {
-        headers['X-Requested-With'] = 'XMLHttpRequest';
-        headers['Accept'] = 'application/json';
-    }
-    
     const options = {
         method: method,
-        headers: headers,
-        mode: 'cors',
-        cache: 'no-cache'
+        headers: {
+            'Content-Type': 'application/json'
+        }
     };
     
     if (data && (method === 'POST' || method === 'PUT')) {
@@ -114,77 +77,42 @@ async function apiRequest(endpoint, method = 'GET', data = null) {
     }
     
     try {
-        console.log(`Отправляем запрос на: ${url.substring(0, 150)}...`);
-        
         const response = await fetch(url, options);
-        
-        console.log(`Ответ получен, статус: ${response.status}`);
-        
-        // Проверяем, является ли ответ JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text();
-            console.warn('Ответ не JSON:', text.substring(0, 200));
-            throw new Error(`Сервер вернул не JSON: ${text.substring(0, 100)}`);
-        }
-        
         const result = await response.json();
         
         if (!response.ok) {
-            console.error('Ошибка API:', result);
-            throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(result.error || `Ошибка ${response.status}: ${response.statusText}`);
         }
         
-        console.log(`✅ Успешный ответ от ${endpoint}`);
+        console.log(`API ответ от ${endpoint}:`, result);
         return result;
-        
     } catch (error) {
-        console.error('❌ Ошибка при выполнении запроса:', error);
-        
-        // Определяем тип ошибки
-        let errorMessage = error.message;
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            errorMessage = 'Ошибка сети. Проверьте подключение к интернету.';
-        } else if (error.message.includes('CORS') || error.message.includes('origin')) {
-            errorMessage = 'Ошибка CORS. API не разрешает запросы с этого домена.';
-        }
-        
-        showNotification(`Ошибка API: ${errorMessage}`, 'danger');
+        console.error('Ошибка API запроса:', error);
+        showNotification(`Ошибка API: ${error.message}`, 'danger');
         throw error;
     }
 }
- 
-// ========== API ФУНКЦИИ ==========
 
 /**
  * Получить список курсов
+ * @returns {Promise<Array>} Массив курсов
  */
 async function getCourses() {
     try {
-        console.log('📚 Загрузка курсов с API...');
-        const courses = await apiRequest('/api/courses', 'GET');
-        console.log(`✅ Загружено курсов: ${courses?.length || 0}`);
-        return courses || [];
+        return await apiRequest('/api/courses', 'GET');
     } catch (error) {
         console.error('Ошибка получения курсов:', error);
-        // Если на GitHub Pages и произошла ошибка CORS, покажем сообщение
-        const env = getEnvironment();
-        if (env.isGitHubPages) {
-            showNotification('На GitHub Pages API недоступен из-за CORS. Запустите локально.', 'warning');
-        }
         return [];
     }
 }
 
 /**
  * Получить список репетиторов
+ * @returns {Promise<Array>} Массив репетиторов
  */
 async function getTutors() {
     try {
-        console.log('👨‍🏫 Загрузка репетиторов с API...');
-        const tutors = await apiRequest('/api/tutors', 'GET');
-        console.log(`✅ Загружено репетиторов: ${tutors?.length || 0}`);
-        return tutors || [];
+        return await apiRequest('/api/tutors', 'GET');
     } catch (error) {
         console.error('Ошибка получения репетиторов:', error);
         return [];
@@ -193,10 +121,10 @@ async function getTutors() {
 
 /**
  * Получить список заявок пользователя
+ * @returns {Promise<Array>} Массив заявок
  */
 async function getOrders() {
     try {
-        console.log('📋 Загрузка заявок с API...');
         return await apiRequest('/api/orders', 'GET');
     } catch (error) {
         console.error('Ошибка получения заявок:', error);
@@ -206,49 +134,38 @@ async function getOrders() {
 
 /**
  * Создать новую заявку
+ * @param {Object} orderData - Данные заявки
+ * @returns {Promise<Object>} Созданная заявка
  */
 async function createOrder(orderData) {
-    try {
-        console.log('📝 Создание заявки:', orderData);
-        return await apiRequest('/api/orders', 'POST', orderData);
-    } catch (error) {
-        console.error('Ошибка создания заявки:', error);
-        throw error;
-    }
+    return await apiRequest('/api/orders', 'POST', orderData);
 }
 
 /**
  * Обновить существующую заявку
+ * @param {number} orderId - ID заявки
+ * @param {Object} orderData - Новые данные
+ * @returns {Promise<Object>} Обновленная заявка
  */
 async function updateOrder(orderId, orderData) {
-    try {
-        console.log(`✏️ Обновление заявки ${orderId}:`, orderData);
-        return await apiRequest(`/api/orders/${orderId}`, 'PUT', orderData);
-    } catch (error) {
-        console.error('Ошибка обновления заявки:', error);
-        throw error;
-    }
+    return await apiRequest(`/api/orders/${orderId}`, 'PUT', orderData);
 }
 
 /**
  * Удалить заявку
+ * @param {number} orderId - ID заявки
+ * @returns {Promise<Object>} Результат удаления
  */
 async function deleteOrder(orderId) {
-    try {
-        console.log(`🗑️ Удаление заявки ${orderId}`);
-        return await apiRequest(`/api/orders/${orderId}`, 'DELETE');
-    } catch (error) {
-        console.error('Ошибка удаления заявки:', error);
-        throw error;
-    }
+    return await apiRequest(`/api/orders/${orderId}`, 'DELETE');
 }
-
 /**
  * Получить информацию о конкретном курсе
+ * @param {number} courseId - ID курса
+ * @returns {Promise<Object>} Данные курса
  */
 async function getCourseById(courseId) {
     try {
-        console.log(`📘 Загрузка курса ${courseId} с API...`);
         return await apiRequest(`/api/courses/${courseId}`, 'GET');
     } catch (error) {
         console.error(`Ошибка получения курса ${courseId}:`, error);
@@ -258,10 +175,11 @@ async function getCourseById(courseId) {
 
 /**
  * Получить информацию о конкретном репетиторе
+ * @param {number} tutorId - ID репетитора
+ * @returns {Promise<Object>} Данные репетитора
  */
 async function getTutorById(tutorId) {
     try {
-        console.log(`👤 Загрузка репетитора ${tutorId} с API...`);
         return await apiRequest(`/api/tutors/${tutorId}`, 'GET');
     } catch (error) {
         console.error(`Ошибка получения репетитора ${tutorId}:`, error);
@@ -271,10 +189,11 @@ async function getTutorById(tutorId) {
 
 /**
  * Получить информацию о конкретной заявке
+ * @param {number} orderId - ID заявки
+ * @returns {Promise<Object>} Данные заявки
  */
 async function getOrderById(orderId) {
     try {
-        console.log(`📄 Загрузка заявки ${orderId} с API...`);
         return await apiRequest(`/api/orders/${orderId}`, 'GET');
     } catch (error) {
         console.error(`Ошибка получения заявки ${orderId}:`, error);
